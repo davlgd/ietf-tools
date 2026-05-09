@@ -45,13 +45,7 @@ fn main() {
 		required_args: 1
 		execute:       cmd_info
 	}
-	info_cmd.add_flag(Flag{
-		flag:          .string
-		name:          'format'
-		abbrev:        'f'
-		description:   'Output format: text (default) or json'
-		default_value: ['text']
-	})
+	add_output_format_flag(mut info_cmd)
 	root.add_command(info_cmd)
 
 	mut search_cmd := Command{
@@ -75,13 +69,7 @@ fn main() {
 		description:   'Maximum number of hits to return (default 20)'
 		default_value: ['20']
 	})
-	search_cmd.add_flag(Flag{
-		flag:          .string
-		name:          'format'
-		abbrev:        'f'
-		description:   'Output format: text (default) or json'
-		default_value: ['text']
-	})
+	add_output_format_flag(mut search_cmd)
 	search_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
@@ -94,13 +82,7 @@ fn main() {
 		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
 		execute:     cmd_latest
 	}
-	latest_cmd.add_flag(Flag{
-		flag:          .string
-		name:          'format'
-		abbrev:        'f'
-		description:   'Output format: text (default) or json'
-		default_value: ['text']
-	})
+	add_output_format_flag(mut latest_cmd)
 	latest_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
@@ -141,6 +123,20 @@ fn main() {
 
 	root.setup()
 	root.parse(os.args)
+}
+
+// add_output_format_flag attaches the `-f/--format` flag (text|json) used by
+// every subcommand that renders structured data — info, search, latest. The
+// helper keeps the description and default value identical across commands
+// so the user sees the same wording everywhere `-f` is offered.
+fn add_output_format_flag(mut cmd Command) {
+	cmd.add_flag(Flag{
+		flag:          .string
+		name:          'format'
+		abbrev:        'f'
+		description:   'Output format: text (default) or json'
+		default_value: ['text']
+	})
 }
 
 // make_client builds the rfclib Client honoured by every subcommand: it picks
