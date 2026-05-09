@@ -3,13 +3,6 @@ module rfclib
 import net.urllib
 import x.json2
 
-// std_level_slug enumerates the slugs used by the IETF Datatracker for the
-// "standardisation level" facet of an RFC. They are stable values the API
-// accepts as filter parameters.
-//
-// Sourced from https://datatracker.ietf.org/api/v1/name/stdlevelname/
-pub const std_level_slugs = ['bcp', 'ds', 'exp', 'hist', 'inf', 'std', 'ps', 'unkn']
-
 // datatracker_page_size is the server-side page size we always request from
 // Datatracker, independent of the user-facing `-n`. It is wide enough that
 // the local AND-filter can find non-pivot tokens that appear deeper in the
