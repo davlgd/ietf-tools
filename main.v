@@ -55,6 +55,7 @@ fn main() {
 	mut cache_cmd := Command{
 		name:        'cache'
 		description: 'Inspect or wipe the on-disk cache'
+		execute:     cmd_cache
 	}
 	cache_cmd.add_command(Command{
 		name:        'path'
@@ -122,6 +123,19 @@ fn cmd_bortzmeyer(cmd Command) ! {
 	}
 	println('Opening ${url}')
 	os.open_uri(url)!
+}
+
+// cmd_cache fires when the user runs `rfc cache` without a subcommand or
+// with one the parser did not recognise. In both cases we print the local
+// help so the available subcommands are visible; an unknown token is treated
+// as a usage error and the process exits non-zero.
+fn cmd_cache(cmd Command) ! {
+	if cmd.args.len > 0 {
+		eprintln('rfc: unknown cache subcommand: ${cmd.args[0]}')
+		cmd.execute_help()
+		exit(1)
+	}
+	cmd.execute_help()
 }
 
 fn cmd_cache_path(cmd Command) ! {
