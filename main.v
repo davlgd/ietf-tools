@@ -318,8 +318,10 @@ fn print_info(r rfclib.Rfc) {
 	if r.doi != '' {
 		println('  DOI:        ${r.doi}')
 	}
-	if r.errata_url != '' {
-		println('  Errata:     ${r.errata_url}')
+	if errata := r.errata_url {
+		if errata != '' {
+			println('  Errata:     ${errata}')
+		}
 	}
 	number := r.number()
 	if number > 0 {

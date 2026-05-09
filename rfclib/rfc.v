@@ -37,8 +37,10 @@ pub:
 	updated_by   []string @[json: 'updated_by']
 	see_also     []string @[json: 'see_also']
 	doi          string
-	errata_url   string @[json: 'errata_url']
-	draft        string
+	// errata_url is `null` upstream when the RFC has no errata reported (e.g.
+	// RFC 9767), so it must be optional rather than a plain string.
+	errata_url ?string @[json: 'errata_url']
+	draft      string
 }
 
 // number returns the integer document number derived from `doc_id`

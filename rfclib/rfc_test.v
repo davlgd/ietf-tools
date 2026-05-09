@@ -96,8 +96,22 @@ fn test_parse_metadata_internet_standard() {
 	assert rfc.obsoleted_by.len == 0
 	assert rfc.is_obsolete() == false
 	assert rfc.see_also == ['STD0090']
-	assert rfc.errata_url == 'https://www.rfc-editor.org/errata/rfc8259'
+	errata := rfc.errata_url or { '' }
+	assert errata == 'https://www.rfc-editor.org/errata/rfc8259'
 	assert rfc.doi == '10.17487/RFC8259'
+}
+
+fn test_parse_metadata_with_null_errata_url() {
+	// RFC 9767 has no errata reported, so the upstream JSON sets
+	// `"errata_url": null`. Regression: this used to crash because the field
+	// was decoded as a non-optional string.
+	rfc := parse_metadata(fixture('rfc9767.json')) or { panic(err) }
+	assert rfc.number() == 9767
+	assert rfc.title == 'Grant Negotiation and Authorization Protocol Resource Server Connections'
+	assert rfc.status == 'PROPOSED STANDARD'
+	if _ := rfc.errata_url {
+		assert false, 'errata_url should be none for RFC 9767'
+	}
 }
 
 fn test_parse_metadata_obsoleted_doc() {
