@@ -61,15 +61,12 @@ pub fn (h DatatrackerHit) updated_date() string {
 	return h.time[..10]
 }
 
-struct DatatrackerMeta {
-	total_count int
-	limit       int
-	offset      int
-	next        ?string
-}
-
+// DatatrackerResponse mirrors only the slice of the Datatracker payload we
+// actually consume — the `objects` array. The upstream `meta` block (limit,
+// offset, total_count, next) is intentionally not decoded because the CLI
+// neither paginates nor surfaces those numbers; x.json2 ignores keys absent
+// from the target struct.
 struct DatatrackerResponse {
-	meta    DatatrackerMeta
 	objects []DatatrackerHit
 }
 

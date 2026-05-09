@@ -216,7 +216,7 @@ fn cmd_search(cmd Command) ! {
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
 	query := rfclib.SearchQuery{
-		title_tokens: cmd.args.clone()
+		title_tokens: cmd.args
 		std_level:    status
 		limit:        limit
 	}
