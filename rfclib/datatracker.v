@@ -15,11 +15,12 @@ const datatracker_page_size = 200
 
 // SearchQuery encodes the filters a user can apply to `rfc search`. The
 // struct is built directly from CLI flags so that the search logic is fully
-// independent of the cli module.
+// independent of the cli module. `std_level` accepts any slug returned by
+// `normalize_std_level`; an empty value disables the filter.
 pub struct SearchQuery {
 pub:
 	title_tokens []string // case-insensitive substrings, AND'd
-	std_level    string   // slug, empty for no filter (see std_level_slugs)
+	std_level    string   // slug returned by normalize_std_level, or '' for no filter
 	limit        int = 20
 }
 

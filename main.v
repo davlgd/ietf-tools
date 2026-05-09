@@ -208,10 +208,8 @@ fn rfc_link(number int) string {
 }
 
 fn cmd_search(cmd Command) ! {
-	if cmd.args.len == 0 {
-		cmd.execute_help()
-		return
-	}
+	// Empty args are filtered upstream by `required_args: 1`, which makes
+	// cli's parser exit before calling us; no defensive check needed here.
 	status := rfclib.normalize_std_level(cmd.flags.get_string('status') or { '' })!
 	limit := cmd.flags.get_int('limit') or { 20 }
 	format := cmd.flags.get_string('format') or { 'text' }
