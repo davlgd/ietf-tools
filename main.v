@@ -218,11 +218,10 @@ fn cmd_search(cmd Command) ! {
 			}
 			for h in hits {
 				slug := h.std_level_short()
-				if slug == '' {
-					println('${rfc_link(h.number)}        ${h.title}')
-				} else {
-					println('${rfc_link(h.number)}  ${slug:5}  ${h.title}')
-				}
+				date := h.updated_date()
+				date_col := if date == '' { '          ' } else { date }
+				slug_col := if slug == '' { '     ' } else { '${slug:5}' }
+				println('${rfc_link(h.number)}  ${slug_col}  ${date_col}  ${h.title}')
 			}
 		}
 		'json' {

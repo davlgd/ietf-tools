@@ -56,6 +56,17 @@ pub fn (h DatatrackerHit) std_level_short() string {
 	return trimmed[idx + 1..]
 }
 
+// updated_date returns the YYYY-MM-DD prefix of the Datatracker `time`
+// field, which records the last modification of the RFC's metadata. It is
+// not the publication date (Datatracker REST does not expose that), but
+// the closest temporal anchor the search payload offers.
+pub fn (h DatatrackerHit) updated_date() string {
+	if h.time.len < 10 {
+		return ''
+	}
+	return h.time[..10]
+}
+
 struct DatatrackerMeta {
 	total_count int
 	limit       int

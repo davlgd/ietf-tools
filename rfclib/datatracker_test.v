@@ -119,6 +119,21 @@ fn test_std_level_short_extracts_slug() {
 	assert empty.std_level_short() == ''
 }
 
+fn test_updated_date_extracts_yyyy_mm_dd() {
+	h := DatatrackerHit{
+		number: 8259
+		title:  'JSON'
+		time:   '2020-01-21T08:32:41Z'
+	}
+	assert h.updated_date() == '2020-01-21'
+	empty := DatatrackerHit{}
+	assert empty.updated_date() == ''
+	short := DatatrackerHit{
+		time: '2020'
+	}
+	assert short.updated_date() == ''
+}
+
 fn test_filter_and_limit_enforces_and_semantics() {
 	hits := [
 		DatatrackerHit{
