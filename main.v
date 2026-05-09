@@ -173,6 +173,25 @@ fn cmd_info(cmd Command) ! {
 	print_info(rfc)
 }
 
+// rfc_link renders an RFC number padded to five columns. When stdout is a
+// TTY the digits are wrapped in an OSC 8 hyperlink pointing at the RFC
+// Editor info page, so modern terminals turn the number into a click target.
+// On non-TTY stdout (pipes, redirections, CI) the plain numeric form is
+// emitted so machine consumers see clean text.
+//
+// The leading padding stays outside the hyperlink so terminals do not
+// extend the click area to the surrounding whitespace.
+fn rfc_link(number int) string {
+	digits := number.str()
+	width := 5
+	pad := if digits.len < width { ' '.repeat(width - digits.len) } else { '' }
+	if os.is_atty(1) == 0 {
+		return '${pad}${digits}'
+	}
+	url := rfclib.rfc_editor_info_url(number)
+	return '${pad}\x1b]8;;${url}\x1b\\${digits}\x1b]8;;\x1b\\'
+}
+
 fn cmd_search(cmd Command) ! {
 	if cmd.args.len == 0 {
 		cmd.execute_help()
@@ -200,9 +219,9 @@ fn cmd_search(cmd Command) ! {
 			for h in hits {
 				slug := h.std_level_short()
 				if slug == '' {
-					println('${h.number:5}        ${h.title}')
+					println('${rfc_link(h.number)}        ${h.title}')
 				} else {
-					println('${h.number:5}  ${slug:5}  ${h.title}')
+					println('${rfc_link(h.number)}  ${slug:5}  ${h.title}')
 				}
 			}
 		}
@@ -229,7 +248,7 @@ fn cmd_latest(cmd Command) ! {
 	match format.to_lower().trim_space() {
 		'text' {
 			for e in entries {
-				println('${e.number:5}  ${e.title}')
+				println('${rfc_link(e.number)}  ${e.title}')
 			}
 		}
 		'json' {
