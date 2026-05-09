@@ -17,12 +17,18 @@ reporting stays consistent across the suite as it grows.
 - ✅ `rfc latest` — list the most recently published RFCs (RFC Editor RSS
   feed); add `-f json` for machine-readable output, `--refresh` to bypass
   the cache
+- ✅ `rfc search <token>...` — find RFCs whose title contains every token
+  (case-insensitive AND); filter by `-s/--status` (e.g. `ps`,
+  `proposed-standard`), cap with `-n`, switch to `-f json` for piping; uses
+  the IETF Datatracker
 - ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk cache
 - ✅ `rfc bortzmeyer <number>` — open Stéphane Bortzmeyer's French-language
   analysis of the RFC in your default browser, with `--print` to emit the URL
   instead of launching one
 - ✅ `--offline` — never touch the network, only use the local cache
-- 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`
+- 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`,
+  author/working-group filters in `search` (will require the local
+  `rfc-index.xml` since Datatracker REST does not expose author joins)
 
 See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
 

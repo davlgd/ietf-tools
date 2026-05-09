@@ -46,6 +46,41 @@ fn main() {
 		execute:       cmd_info
 	})
 
+	mut search_cmd := Command{
+		name:          'search'
+		description:   'Search RFCs by title token(s) and optional status (IETF Datatracker)'
+		usage:         '<token>...'
+		required_args: 1
+		execute:       cmd_search
+	}
+	search_cmd.add_flag(Flag{
+		flag:          .string
+		name:          'status'
+		abbrev:        's'
+		description:   'Filter by std_level slug (ps, std, bcp, inf, exp, hist, ds, unkn)'
+		default_value: ['']
+	})
+	search_cmd.add_flag(Flag{
+		flag:          .int
+		name:          'limit'
+		abbrev:        'n'
+		description:   'Maximum number of hits to return (default 20)'
+		default_value: ['20']
+	})
+	search_cmd.add_flag(Flag{
+		flag:          .string
+		name:          'format'
+		abbrev:        'f'
+		description:   'Output format: text (default) or json'
+		default_value: ['text']
+	})
+	search_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and re-query Datatracker'
+	})
+	root.add_command(search_cmd)
+
 	mut latest_cmd := Command{
 		name:        'latest'
 		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
@@ -136,6 +171,48 @@ fn cmd_info(cmd Command) ! {
 	client := make_client(cmd)!
 	rfc := client.fetch_metadata(number)!
 	print_info(rfc)
+}
+
+fn cmd_search(cmd Command) ! {
+	if cmd.args.len == 0 {
+		cmd.execute_help()
+		return
+	}
+	status := rfclib.normalize_std_level(cmd.flags.get_string('status') or { '' })!
+	limit := cmd.flags.get_int('limit') or { 20 }
+	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
+
+	query := rfclib.SearchQuery{
+		title_tokens: cmd.args.clone()
+		std_level:    status
+		limit:        limit
+	}
+	client := make_client(cmd)!
+	hits := if refresh { client.search_fresh(query)! } else { client.search(query)! }
+
+	match format.to_lower().trim_space() {
+		'text' {
+			if hits.len == 0 {
+				eprintln('rfc: no match')
+				exit(1)
+			}
+			for h in hits {
+				slug := h.std_level_short()
+				if slug == '' {
+					println('${h.number:5}        ${h.title}')
+				} else {
+					println('${h.number:5}  ${slug:5}  ${h.title}')
+				}
+			}
+		}
+		'json' {
+			println(json2.encode(hits, prettify: true))
+		}
+		else {
+			return error('unknown format: ${format} (expected: text, json)')
+		}
+	}
 }
 
 fn cmd_latest(cmd Command) ! {
