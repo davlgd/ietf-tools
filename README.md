@@ -30,8 +30,6 @@ reporting stays consistent across the suite as it grows.
   author/working-group filters in `search` (will require the local
   `rfc-index.xml` since Datatracker REST does not expose author joins)
 
-See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
-
 ## Quick start
 
 ```sh
@@ -41,14 +39,26 @@ make build              # produces ./rfc
 # Read an RFC (plain text from rfc-editor.org, cached on first call)
 ./rfc 8259
 
-# Show metadata (no full text)
+# Pick a different rendering: text (default), html, pdf, xml
+./rfc -f html 8259
+./rfc -f pdf 9000 > rfc9000.pdf
+
+# Show metadata (status, dates, obsoletes, errata, RFC Editor + Datatracker links)
 ./rfc info 8259
-# RFC8259 — The JavaScript Object Notation (JSON) Data Interchange Format
-#   Authors:    T. Bray, Ed.
-#   Date:       December 2017
-#   Status:     INTERNET STANDARD
-#   …
-#   Errata:     https://www.rfc-editor.org/errata/rfc8259
+
+# List recently published RFCs from the RSS feed (-f json for piping)
+./rfc latest
+
+# Search by title token(s); add -s to filter by std_level, -n to cap, -f json
+./rfc search tls 1.3
+./rfc search -s ps tls 1.3
+
+# Open Bortzmeyer's analysis in your browser when one exists
+./rfc bortzmeyer 8259
+
+# Inspect or wipe the local cache
+./rfc cache path
+./rfc cache clear
 
 # Work fully offline once entries are cached
 ./rfc --offline info 8259
@@ -66,11 +76,14 @@ ietf-tools/
 ├── rfclib/              # Shared library; one cache + one HTTP client across the suite
 │   ├── cache.v          # Content-addressed on-disk cache (sha256(url) → file)
 │   ├── http.v           # net.http wrapper: User-Agent, timeouts, cache integration
-│   ├── rfc.v            # Rfc struct, parse_rfc_number, URL helpers
+│   ├── rfc.v            # Rfc struct, parse_rfc_number, format/URL helpers
+│   ├── feed.v           # RSS 2.0 parser for the RFC Editor "recent RFCs" feed
+│   ├── datatracker.v    # IETF Datatracker search query + JSON response decoder
+│   ├── bortzmeyer.v     # Bortzmeyer URL builder + HEAD-based existence probe
 │   ├── errors.v         # Typed errors (ErrInvalidNumber, ErrNotFound, ErrUpstream)
 │   ├── *_test.v         # Unit tests
-│   └── testdata/        # Real per-RFC JSON fixtures (rfc-editor.org)
-├── Makefile             # build, test, fmt, vet, clean
+│   └── testdata/        # Real fixtures captured from upstream
+├── Makefile             # build, dev, test, fmt, vet, clean
 └── v.mod
 ```
 
@@ -122,13 +135,18 @@ serves from disk.
 
 `rfc` currently talks to:
 
-- `https://www.rfc-editor.org/rfc/rfcNNNN.json` — per-RFC metadata.
-- `https://www.rfc-editor.org/rfc/rfcNNNN.txt` — plain-text rendering.
+- `https://www.rfc-editor.org/rfc/rfcNNNN.{json,txt,html,pdf,xml}` — per-RFC
+  metadata and renderings (the latter two only for xml2rfc-v3 era documents).
+- `https://www.rfc-editor.org/rfcrss.xml` — RSS 2.0 feed of recent RFCs.
+- `https://datatracker.ietf.org/api/v1/doc/document/` — Datatracker search
+  endpoint used by `rfc search`.
+- `https://www.bortzmeyer.org/<number>.html` — Bortzmeyer's per-RFC analysis,
+  reached via a HEAD probe + browser launch.
 
-Future subcommands will add the IETF Datatracker
-(`https://datatracker.ietf.org/api/v1/`), per-RFC errata
-(`https://www.rfc-editor.org/errata/rfcNNNN.json`), and IANA registries
-(`https://www.iana.org/protocols`).
+Future subcommands will add per-RFC errata
+(`https://www.rfc-editor.org/errata/rfcNNNN.json`), IANA registries
+(`https://www.iana.org/protocols`), and richer Datatracker views (drafts,
+ballots, working-group state).
 
 ## Acknowledgements
 
