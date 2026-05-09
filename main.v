@@ -38,13 +38,21 @@ fn main() {
 		default_value: ['text']
 	})
 
-	root.add_command(Command{
+	mut info_cmd := Command{
 		name:          'info'
 		description:   'Show metadata for an RFC: status, dates, obsoletes, errata'
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_info
+	}
+	info_cmd.add_flag(Flag{
+		flag:          .string
+		name:          'format'
+		abbrev:        'f'
+		description:   'Output format: text (default) or json'
+		default_value: ['text']
 	})
+	root.add_command(info_cmd)
 
 	mut search_cmd := Command{
 		name:          'search'
@@ -168,9 +176,14 @@ fn cmd_get(cmd Command) ! {
 
 fn cmd_info(cmd Command) ! {
 	number := rfclib.parse_rfc_number(cmd.args[0])!
+	format := cmd.flags.get_string('format') or { 'text' }
 	client := make_client(cmd)!
 	rfc := client.fetch_metadata(number)!
-	print_info(rfc)
+	match format.to_lower().trim_space() {
+		'text' { print_info(rfc) }
+		'json' { println(json2.encode(rfc, prettify: true)) }
+		else { return error('unknown format: ${format} (expected: text, json)') }
+	}
 }
 
 // rfc_link renders an RFC number padded to five columns. When stdout is a
