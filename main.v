@@ -167,6 +167,12 @@ fn cmd_get(cmd Command) ! {
 	number := rfclib.parse_rfc_number(cmd.args[0])!
 	format_str := cmd.flags.get_string('format') or { 'text' }
 	format := rfclib.parse_format(format_str)!
+	// Refuse to dump binary PDF straight into an interactive terminal: the
+	// resulting noise scrambles the user's session. They can still pipe or
+	// redirect, in which case stdout is not a TTY and the body flows.
+	if format == .pdf && os.is_atty(1) != 0 {
+		return error('refusing to write PDF to a terminal; redirect (e.g. > rfc${number}.pdf) or pipe to a viewer')
+	}
 	client := make_client(cmd)!
 	body := client.fetch_format(number, format)!
 	// Use `print` rather than `println`: keeps PDF/XML byte-exact and avoids a
