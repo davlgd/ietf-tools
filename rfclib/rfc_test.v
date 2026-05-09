@@ -40,6 +40,13 @@ fn test_metadata_url_and_text_url() {
 	assert metadata_url(1149) == 'https://www.rfc-editor.org/rfc/rfc1149.json'
 }
 
+fn test_info_page_urls() {
+	assert rfc_editor_info_url(8259) == 'https://www.rfc-editor.org/info/rfc8259'
+	assert datatracker_url(8259) == 'https://datatracker.ietf.org/doc/rfc8259/'
+	assert rfc_editor_info_url(1149) == 'https://www.rfc-editor.org/info/rfc1149'
+	assert datatracker_url(1149) == 'https://datatracker.ietf.org/doc/rfc1149/'
+}
+
 fn test_parse_metadata_internet_standard() {
 	rfc := parse_metadata(fixture('rfc8259.json')) or { panic(err) }
 	assert rfc.doc_id == 'RFC8259'

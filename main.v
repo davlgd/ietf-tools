@@ -187,6 +187,11 @@ fn print_info(r rfclib.Rfc) {
 	if r.errata_url != '' {
 		println('  Errata:     ${r.errata_url}')
 	}
+	number := r.number()
+	if number > 0 {
+		println('  RFC Editor: ${rfclib.rfc_editor_info_url(number)}')
+		println('  Tracker:    ${rfclib.datatracker_url(number)}')
+	}
 	if r.abstract != '' {
 		println('')
 		println('Abstract:')

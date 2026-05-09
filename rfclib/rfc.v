@@ -7,6 +7,10 @@ import x.json2
 // document number.
 pub const rfc_editor_base = 'https://www.rfc-editor.org'
 
+// datatracker_base is the IETF Datatracker host. It carries the live process
+// state of every RFC and Internet-Draft (working group, ballots, history).
+pub const datatracker_base = 'https://datatracker.ietf.org'
+
 // Rfc is the typed view of the per-RFC metadata document published by the
 // RFC Editor at `https://www.rfc-editor.org/rfc/rfcNNNN.json`.
 //
@@ -98,6 +102,19 @@ pub fn metadata_url(number int) string {
 // text_url returns the canonical URL of the plain-text rendering of an RFC.
 pub fn text_url(number int) string {
 	return '${rfc_editor_base}/rfc/rfc${number}.txt'
+}
+
+// rfc_editor_info_url returns the human-facing RFC Editor information page,
+// which links every published format and renders the abstract and the
+// status-change history alongside the document.
+pub fn rfc_editor_info_url(number int) string {
+	return '${rfc_editor_base}/info/rfc${number}'
+}
+
+// datatracker_url returns the IETF Datatracker page for an RFC, where its
+// working-group origin, ballots and revision history are exposed.
+pub fn datatracker_url(number int) string {
+	return '${datatracker_base}/doc/rfc${number}/'
 }
 
 // parse_metadata decodes a per-RFC JSON document into a typed Rfc value.
