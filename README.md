@@ -91,28 +91,21 @@ never leaves a corrupt entry under the canonical key.
 make test               # run all rfclib tests
 make fmt                # apply v fmt -w
 make vet                # v vet
-make build              # produce ./rfc
+make build              # produce ./rfc (production build via clang -O)
+make dev                # quick non-optimised build via tcc (faster compile)
 make clean
 ```
+
+`make build` uses `v -prod` so that the resulting binary is the optimised
+clang build, which is what you want for daily use. `make dev` is the tcc
+fast-compile path, useful while iterating on code; HTTPS may behave
+differently between the two back ends, so reach for `make build` whenever
+you exercise network paths.
 
 Tests use real RFC payloads captured from `rfc-editor.org` as fixtures
 (`rfclib/testdata/rfc8259.json`, `rfc7159.json`, `rfc1149.json`). HTTP tests
 never hit the network: they pre-populate the cache and verify the client
 serves from disk.
-
-## SSL on macOS
-
-V's bundled mbedtls back end can hang on the SSL handshake in some macOS
-configurations. If `rfc` freezes on a fresh fetch, switch to OpenSSL:
-
-```sh
-brew install openssl@3
-V_SSL_BACKEND=openssl make build
-```
-
-Once a resource is cached on disk, `--offline` reads it back without ever
-calling into the SSL stack — a working build is enough for steady-state use
-even if your environment cannot reach upstream.
 
 ## Data sources
 
