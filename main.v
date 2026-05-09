@@ -40,7 +40,7 @@ fn main() {
 
 	mut bortzmeyer_cmd := Command{
 		name:          'bortzmeyer'
-		description:   "Open Stéphane Bortzmeyer's commentary for an RFC in your browser."
+		description:   "Open Stéphane Bortzmeyer's analysis for an RFC in your browser."
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_bortzmeyer

@@ -1,7 +1,7 @@
 module rfclib
 
 // bortzmeyer_base is Stéphane Bortzmeyer's blog, which publishes a per-RFC
-// French-language commentary at `/<number>.html` for many — but not all —
+// French-language analysis at `/<number>.html` for many — but not all —
 // RFCs. The blog has been an unofficial reading companion to the RFC corpus
 // for two decades.
 pub const bortzmeyer_base = 'https://www.bortzmeyer.org'
