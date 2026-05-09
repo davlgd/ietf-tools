@@ -6,6 +6,7 @@ module main
 import cli { Command, Flag }
 import os
 import rfclib
+import x.json2
 
 fn main() {
 	mut root := Command{
@@ -44,6 +45,25 @@ fn main() {
 		required_args: 1
 		execute:       cmd_info
 	})
+
+	mut latest_cmd := Command{
+		name:        'latest'
+		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
+		execute:     cmd_latest
+	}
+	latest_cmd.add_flag(Flag{
+		flag:          .string
+		name:          'format'
+		abbrev:        'f'
+		description:   'Output format: text (default) or json'
+		default_value: ['text']
+	})
+	latest_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and fetch the feed directly from rfc-editor.org'
+	})
+	root.add_command(latest_cmd)
 
 	mut bortzmeyer_cmd := Command{
 		name:          'bortzmeyer'
@@ -116,6 +136,32 @@ fn cmd_info(cmd Command) ! {
 	client := make_client(cmd)!
 	rfc := client.fetch_metadata(number)!
 	print_info(rfc)
+}
+
+fn cmd_latest(cmd Command) ! {
+	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
+	client := make_client(cmd)!
+
+	entries := if refresh {
+		client.refresh_latest()!
+	} else {
+		client.fetch_latest()!
+	}
+
+	match format.to_lower().trim_space() {
+		'text' {
+			for e in entries {
+				println('${e.number:5}  ${e.title}')
+			}
+		}
+		'json' {
+			println(json2.encode(entries, prettify: true))
+		}
+		else {
+			return error('unknown format: ${format} (expected: text, json)')
+		}
+	}
 }
 
 fn cmd_bortzmeyer(cmd Command) ! {

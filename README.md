@@ -14,6 +14,9 @@ reporting stays consistent across the suite as it grows.
 - ✅ `rfc <number>` — fetch and print the plain-text RFC
 - ✅ `rfc info <number>` — show metadata (status, authors, dates, obsoletes,
   errata, DOI…)
+- ✅ `rfc latest` — list the most recently published RFCs (RFC Editor RSS
+  feed); add `-f json` for machine-readable output, `--refresh` to bypass
+  the cache
 - ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk cache
 - ✅ `rfc bortzmeyer <number>` — open Stéphane Bortzmeyer's French-language
   analysis of the RFC in your default browser, with `--print` to emit the URL

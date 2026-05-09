@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+	<channel>
+		<title>Recent RFCs</title>
+		<link>https://www.rfc-editor.org/</link>
+		<description>Recently published RFCs</description>
+		<language>en-us</language>
+		<lastBuildDate>Thu, 30 Apr 2026 09:53:35 -0700</lastBuildDate>
+			<item>
+		<title>RFC 9961: MPLS Segment Routing Point-to-Multipoint (P2MP) Policy Ping</title>
+		<link>https://www.rfc-editor.org/info/rfc9961</link>
+		<description>Segment Routing (SR) Point-to-Multipoint (P2MP) Policies are used to
+define and manage explicit P2MP paths within a network. These
+policies are typically calculated via a controller-based mechanism
+and installed via, e.g., a Path Computation Element (PCE). In other
+cases, these policies can be installed using the Network
+Configuration Protocol (NETCONF) / YANG or a Command Line Interface
+(CLI). They are used to steer Multicast traffic along optimized paths
+from a Root to a set of Leaf routers.
+
+This document defines extensions to ping and traceroute mechanisms
+for an SR P2MP Policy with MPLS encapsulation to provide Operations,
+Administration, and Maintenance (OAM) capabilities. The extensions
+enable operators to verify connectivity, diagnose failures, and
+troubleshoot forwarding issues within SR P2MP Policy Multicast trees.
+
+By introducing new mechanisms for detecting failures and validating
+path integrity, this document enhances the operational robustness of
+P2MP Multicast deployments. Additionally, it ensures that existing
+MPLS and SR-based OAM tools can be effectively applied to networks
+utilizing SR P2MP Policies.</description>
+	</item>
+			<item>
+		<title>RFC 9960: Segment Routing Point-to-Multipoint Policy</title>
+		<link>https://www.rfc-editor.org/info/rfc9960</link>
+		<description>The Point-to-Multipoint (P2MP) Policy enables creation of P2MP trees
+for efficient multipoint packet delivery in a Segment Routing (SR)
+domain. This document specifies the architecture, signaling, and
+procedures for SR P2MP Policies with Segment Routing over MPLS
+(SR-MPLS) and Segment Routing over IPv6 (SRv6). It defines the SR
+P2MP Policy construct, candidate paths (CPs) of an SR P2MP Policy,
+and the instantiation of the P2MP tree instances (PTIs) of a CP using
+Replication segments. Additionally, it describes the required
+extensions for a controller to support P2MP path computation and
+provisioning. This document updates RFC 9524.</description>
+	</item>
+			<item>
+		<title>RFC 9963: Legacy RSASSA-PKCS1-v1_5 Code Points for TLS 1.3</title>
+		<link>https://www.rfc-editor.org/info/rfc9963</link>
+		<description>This document allocates code points for the use of RSASSA-PKCS1-v1_5
+with client certificates in TLS 1.3. This removes an obstacle for
+some deployments to migrate to TLS 1.3.</description>
+	</item>
+			<item>
+		<title>RFC 9768: More Accurate Explicit Congestion Notification (AccECN) Feedback in TCP</title>
+		<link>https://www.rfc-editor.org/info/rfc9768</link>
+		<description>Explicit Congestion Notification (ECN) is a mechanism by which
+network nodes can mark IP packets instead of dropping them to
+indicate incipient congestion to the endpoints. Receivers with an
+ECN-capable transport protocol feed back this information to the
+sender. ECN was originally specified for TCP in such a way that only
+one feedback signal can be transmitted per Round-Trip Time (RTT).
+More recently defined mechanisms like Congestion Exposure (ConEx),
+Data Center TCP (DCTCP), or Low Latency, Low Loss, and Scalable
+Throughput (L4S) need more accurate ECN feedback information whenever
+more than one marking is received in one RTT. This document updates
+the original ECN specification defined in RFC 3168 by specifying a
+scheme that provides more than one feedback signal per RTT in the TCP
+header, called More Accurate ECN (AccECN). Given TCP header space is
+scarce, it allocates a reserved header bit previously assigned to the
+ECN-nonce. It also overloads the two existing ECN flags in the TCP
+header. The resulting extra space is additionally exploited to feed
+back the IP-ECN field received during the TCP connection
+establishment. Supplementary feedback information can optionally be
+provided in two new TCP Option alternatives, which are never used on
+the TCP SYN. The document also specifies the treatment of this
+updated TCP wire protocol by middleboxes.</description>
+	</item>
+			<item>
+		<title>RFC 9946: The UDP Speed Test Protocol (UDPSTP) for One-Way IP Capacity Metric Measurement</title>
+		<link>https://www.rfc-editor.org/info/rfc9946</link>
+		<description>This document addresses the problem of protocol support for measuring
+One-Way IP Capacity metrics specified by RFC 9097. The Method of
+Measurement discussed in that RFC requires a feedback channel from
+the receiver to control the sender's transmission rate in near
+real-time. This document defines the UDP Speed Test Protocol (UDPSTP)
+for conducting measurements as described in RFC 9097 and other
+related measurements.</description>
+	</item>
+			<item>
+		<title>RFC 9951: Export of Delay Performance Metrics in IP Flow Information Export (IPFIX)</title>
+		<link>https://www.rfc-editor.org/info/rfc9951</link>
+		<description>This document specifies new IP Flow Information Export (IPFIX)
+Information Elements to export the On-Path delay at each Operations,
+Administration, and Maintenance (OAM) transit and decapsulating
+nodes. The On-Path delay is defined as the delay between the OAM
+header encapsulating node and each OAM header transit and OAM header
+decapsulating nodes. This delay measurement is computed by an On-Path
+Telemetry protocol and is exported by the IPFIX process.</description>
+	</item>
+			<item>
+		<title>RFC 9914: Root-Initiated Routing State in the Routing Protocol for Low-Power and Lossy Networks (RPL)</title>
+		<link>https://www.rfc-editor.org/info/rfc9914</link>
+		<description>The Routing Protocol for Low-Power and Lossy Networks (RPL) (RFC
+6550) enables data packet routing along a Destination-Oriented
+Directed Acyclic Graph (DODAG). However, the default route
+establishment mechanism relies on hop-by-hop forwarding along the
+DODAG, which may not always provide optimal routing efficiency. This
+document introduces the concept of Destination Advertisement Object
+(DAO) Projection, a mechanism that allows a RPL Root or an external
+controller to install optimized routes within the RPL domain. DAO
+Projections enable the creation of optimized unicast or multicast
+routes that do not strictly follow the DODAG structure, thereby
+improving routing efficiency, reliability, availability, and resource
+utilization in the RPL domain. This document specifies two types of
+Projected Routes (P-Routes) -- Storing Mode and Non-Storing Mode --
+and outlines the signaling procedures necessary to establish,
+maintain, and remove these routes.  This document updates RFCs 6550,
+6553, and 8138.</description>
+	</item>
+			<item>
+		<title>RFC 9913: Reliable and Available Wireless (RAW) Technologies</title>
+		<link>https://www.rfc-editor.org/info/rfc9913</link>
+		<description>This document surveys the short- and middle-range radio technologies
+over which providing Deterministic Networking (DetNet), and more
+specifically, Reliable and Available Wireless (RAW) service is
+suitable. It also presents the characteristics that RAW may leverage
+and explores the applicability of the technologies to carry
+deterministic flows, as of the time of publication. The studied
+technologies are Wi-Fi 6/7, Time-Slotted Channel Hopping (TSCH), 3GPP
+5G, and L-band Digital Aeronautical Communications System (LDACS).</description>
+	</item>
+			<item>
+		<title>RFC 9912: Reliable and Available Wireless (RAW) Architecture</title>
+		<link>https://www.rfc-editor.org/info/rfc9912</link>
+		<description>Reliable and Available Wireless (RAW) extends the reliability and
+availability of Deterministic Networking (DetNet) to networks
+composed of any combination of wired and wireless segments.  The RAW
+architecture leverages and extends RFC 8655 (&quot;Deterministic
+Networking Architecture&quot;) to adapt to challenges that prominently
+affect the wireless medium, notably intermittent transmission loss. 
+This document defines a network control loop that optimizes the use
+of constrained bandwidth and energy while ensuring the expected
+DetNet services.  The loop involves a new Point of Local Repair (PLR)
+function in the DetNet Service sub-layer that dynamically selects the
+DetNet path(s) for packets to route around local connectivity
+degradation.</description>
+	</item>
+			<item>
+		<title>RFC 9932: Mutually Authenticating TLS in the Context of Federations</title>
+		<link>https://www.rfc-editor.org/info/rfc9932</link>
+		<description>This Informational Independent Submission to the RFC Series describes
+a means to use TLS 1.3 to perform machine-to-machine mutual
+authentication within federations. This memo is not a standard. It
+does not modify the TLS protocol in any way, nor does it require
+changes to common TLS libraries. TLS is specified and standardized by
+the IETF's TLS Working Group.
+
+The framework enables interoperable trust management for federated
+machine-to-machine communication. It introduces a centrally managed
+trust anchor and a controlled metadata publication process, ensuring
+that only authorized members are identifiable within the federation.
+These mechanisms support unambiguous entity identification and reduce
+the risk of impersonation, promoting secure and policy-aligned
+interaction across organizational boundaries.</description>
+	</item>
+			<item>
+		<title>RFC 9941: Secure Shell (SSH) Key Exchange Method Using Hybrid Streamlined NTRU Prime sntrup761 and X25519 with SHA-512: sntrup761x25519-sha512</title>
+		<link>https://www.rfc-editor.org/info/rfc9941</link>
+		<description>This document describes a widely deployed hybrid key exchange method
+in the Secure Shell (SSH) protocol that is based on Streamlined NTRU
+Prime sntrup761 and X25519 with SHA-512.</description>
+	</item>
+			<item>
+		<title>RFC 9940: Some Key Terms for Network Fault and Problem Management</title>
+		<link>https://www.rfc-editor.org/info/rfc9940</link>
+		<description>This document sets out some terms that are fundamental to a common
+understanding of network fault and problem management within the
+IETF.
+
+The purpose of this document is to bring clarity to discussions and
+other work related to network fault and problem management -- in
+particular, to YANG data models and management protocols that report,
+make visible, or manage network faults and problems.</description>
+	</item>
+			<item>
+		<title>RFC 9948: Internet Protocol Police (IPP) - Schedule of Punishments</title>
+		<link>https://www.rfc-editor.org/info/rfc9948</link>
+		<description>The Internet Protocol Police (IPP) is in charge of punishing willful
+infractions of the Collected Wisdom of the IETF community.  This
+document sets out the schedule of punishments for such infractions.</description>
+	</item>
+			<item>
+		<title>RFC 9949: BUSA-TLS: Mandatory Audio Component (MAC) Pre-Shared Key (PSK) Derivation for TLS 1.3 Using 2 Live Crew's &quot;Banned in the U.S.A.&quot;</title>
+		<link>https://www.rfc-editor.org/info/rfc9949</link>
+		<description>TLS 1.3 (RFC 8446) eliminates null cipher suites entirely.  However,
+one vestigial zero remains in the key schedule: when no Pre-Shared
+Key (PSK) is used, the Input Keying Material (IKM) for the initial
+HKDF-Extract operation is a string of zero bytes.  This document
+specifies that this zero-byte IKM MUST be replaced with the SHA-256
+digest of the raw PCM audio data of &quot;Banned in the U.S.A.&quot; by 2 Live
+Crew (from the album &quot;Banned in the U.S.A.&quot;, 1990), hereafter
+referred to as the Mandatory Audio Component (MAC).  Implementations
+that omit the MAC are non-conformant with BUSA-TLS and also have
+questionable taste in music.
+
+The IETF's process-heavy, consensus-driven, working-group-reviewed
+approach to protocol standardization is a fine way to run a standards
+body.  It is also completely antithetical to the spirit of a document
+that requires a jury-banned rap album as a cryptographic primitive.
+
+This document is offered in the same spirit as the album it
+incorporates: unapologetically and in defiance of institutional
+authority.</description>
+	</item>
+			<item>
+		<title>RFC 9928: DHCPv4 over DHCPv6 with Relay Agent Support</title>
+		<link>https://www.rfc-editor.org/info/rfc9928</link>
+		<description>This document describes a mechanism for networks with legacy
+IPv4-only clients to use services provided by DHCPv4 over DHCPv6 in a
+Relay Agent. RFC 7341 specifies the use of DHCPv4 over DHCPv6 in the
+client only. This document specifies an approach based on RFC 7341
+that allows a Relay Agent to implement the DHCPv4-over-DHCPv6
+encapsulation and decapsulation of DHCPv4 messages in DHCPv6 messages
+on behalf of a DHCPv4 client.</description>
+	</item>
+		</channel>
+</rss>

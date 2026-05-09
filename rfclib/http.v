@@ -75,6 +75,24 @@ pub fn (c Client) fetch(url string) !string {
 			resource: url
 		}
 	}
+	return c.network_get(url)!
+}
+
+// fetch_fresh always reaches the network and overwrites any cache entry for
+// `url`. Useful for moving resources such as the RFC Editor feed where a
+// cache hit may be too stale to be useful.
+//
+// In offline mode it returns an error rather than silently serving cache.
+pub fn (c Client) fetch_fresh(url string) !string {
+	if c.offline {
+		return error('cannot refresh ${url} in offline mode')
+	}
+	return c.network_get(url)!
+}
+
+// network_get performs a GET, writes the response to the cache on success,
+// and translates HTTP status codes into rfclib's typed error vocabulary.
+fn (c Client) network_get(url string) !string {
 	resp := http.fetch(
 		url:           url
 		method:        .get
