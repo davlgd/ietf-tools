@@ -37,6 +37,27 @@ pub fn new_client_with(cache Cache, offline bool) Client {
 	}
 }
 
+// head performs a HEAD request and returns the response status code. It is
+// intended for cheap existence checks (does an article exist? is a registry
+// reachable?) and bypasses the cache entirely because HEAD has no body to
+// store.
+//
+// HEAD requires reaching the network; in offline mode it returns an error
+// rather than guessing from cache state.
+pub fn (c Client) head(url string) !int {
+	if c.offline {
+		return error('cannot HEAD ${url} in offline mode')
+	}
+	resp := http.fetch(
+		url:           url
+		method:        .head
+		user_agent:    user_agent
+		read_timeout:  default_timeout
+		write_timeout: default_timeout
+	)!
+	return resp.status_code
+}
+
 // fetch returns the body for `url` from the cache when available, otherwise
 // fetches it over HTTPS and stores the response for next time.
 //

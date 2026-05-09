@@ -16,6 +16,9 @@ reporting stays consistent across the suite as it grows.
   errata, DOI…).
 - ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk
   cache.
+- ✅ `rfc bortzmeyer <number>` — open Stéphane Bortzmeyer's French-language
+  commentary for the RFC in your default browser; exits with an error if no
+  article exists. Add `--print` to just emit the URL on stdout.
 - ✅ `--offline` — never touch the network, only use the local cache.
 - 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`.
 

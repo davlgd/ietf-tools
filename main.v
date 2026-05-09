@@ -38,6 +38,20 @@ fn main() {
 		execute:       cmd_info
 	})
 
+	mut bortzmeyer_cmd := Command{
+		name:          'bortzmeyer'
+		description:   "Open Stéphane Bortzmeyer's commentary for an RFC in your browser."
+		usage:         '<rfc-number>'
+		required_args: 1
+		execute:       cmd_bortzmeyer
+	}
+	bortzmeyer_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'print'
+		description: 'Only print the URL on stdout; do not launch a browser.'
+	})
+	root.add_command(bortzmeyer_cmd)
+
 	mut cache_cmd := Command{
 		name:        'cache'
 		description: 'Inspect or wipe the on-disk cache.'
@@ -90,6 +104,24 @@ fn cmd_info(cmd Command) ! {
 	client := make_client(cmd)!
 	rfc := client.fetch_metadata(number)!
 	print_info(rfc)
+}
+
+fn cmd_bortzmeyer(cmd Command) ! {
+	number := rfclib.parse_rfc_number(cmd.args[0])!
+	url := rfclib.bortzmeyer_url(number)
+	print_only := cmd.flags.get_bool('print') or { false }
+
+	client := make_client(cmd)!
+	if !client.bortzmeyer_exists(number)! {
+		eprintln('rfc: no Bortzmeyer article for RFC ${number} (${url}).')
+		exit(1)
+	}
+	if print_only {
+		println(url)
+		return
+	}
+	println('Opening ${url}')
+	os.open_uri(url)!
 }
 
 fn cmd_cache_path(cmd Command) ! {
