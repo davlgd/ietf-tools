@@ -3,8 +3,8 @@ module rfclib
 // bortzmeyer_base is Stéphane Bortzmeyer's blog, which publishes a per-RFC
 // French-language analysis at `/<number>.html` for many — but not all —
 // RFCs. The blog has been an unofficial reading companion to the RFC corpus
-// for two decades.
-pub const bortzmeyer_base = 'https://www.bortzmeyer.org'
+// for two decades. Module-private: callers go through `bortzmeyer_url`.
+const bortzmeyer_base = 'https://www.bortzmeyer.org'
 
 // bortzmeyer_url returns the canonical Bortzmeyer article URL for an RFC.
 // The article may or may not exist; use `bortzmeyer_exists` to verify before

@@ -34,9 +34,8 @@ fn test_parse_rfc_number_rejects_invalid() {
 	}
 }
 
-fn test_metadata_url_and_text_url() {
+fn test_metadata_url() {
 	assert metadata_url(8259) == 'https://www.rfc-editor.org/rfc/rfc8259.json'
-	assert text_url(8259) == 'https://www.rfc-editor.org/rfc/rfc8259.txt'
 	assert metadata_url(1149) == 'https://www.rfc-editor.org/rfc/rfc1149.json'
 }
 
@@ -94,7 +93,6 @@ fn test_parse_metadata_internet_standard() {
 	assert rfc.formats == ['ASCII', 'HTML']
 	assert rfc.obsoletes == ['RFC7159']
 	assert rfc.obsoleted_by.len == 0
-	assert rfc.is_obsolete() == false
 	assert rfc.see_also == ['STD0090']
 	errata := rfc.errata_url or { '' }
 	assert errata == 'https://www.rfc-editor.org/errata/rfc8259'
@@ -117,7 +115,6 @@ fn test_parse_metadata_with_null_errata_url() {
 fn test_parse_metadata_obsoleted_doc() {
 	rfc := parse_metadata(fixture('rfc7159.json')) or { panic(err) }
 	assert rfc.number() == 7159
-	assert rfc.is_obsolete() == true
 	assert rfc.obsoleted_by == ['RFC8259']
 	assert rfc.obsoletes == ['RFC4627', 'RFC7158']
 }

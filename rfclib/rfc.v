@@ -49,11 +49,6 @@ pub fn (r Rfc) number() int {
 	return r.doc_id.trim_string_left('RFC').int()
 }
 
-// is_obsolete reports whether the RFC has been replaced by a later one.
-pub fn (r Rfc) is_obsolete() bool {
-	return r.obsoleted_by.len > 0
-}
-
 // parse_rfc_number turns user input into a positive RFC number. It accepts
 // the common surface forms users actually type:
 //
@@ -141,13 +136,6 @@ pub fn format_url(number int, f Format) string {
 	return '${rfc_editor_base}/rfc/rfc${number}.${f.extension()}'
 }
 
-// text_url returns the canonical URL of the plain-text rendering of an RFC.
-// Equivalent to `format_url(number, .text)`; kept for callers that only ever
-// want the canonical text form.
-pub fn text_url(number int) string {
-	return format_url(number, .text)
-}
-
 // rfc_editor_info_url returns the human-facing RFC Editor information page,
 // which links every published format and renders the abstract and the
 // status-change history alongside the document.
@@ -164,12 +152,6 @@ pub fn datatracker_url(number int) string {
 // parse_metadata decodes a per-RFC JSON document into a typed Rfc value.
 pub fn parse_metadata(body string) !Rfc {
 	return json2.decode[Rfc](body)!
-}
-
-// fetch_text returns the plain-text rendering of an RFC, going through the
-// rfclib cache so subsequent lookups hit local disk.
-pub fn (c Client) fetch_text(number int) !string {
-	return c.fetch_format(number, .text)!
 }
 
 // fetch_format returns the body of an RFC in the requested format. The cache

@@ -21,13 +21,6 @@ pub:
 	offline bool // when true, only cache hits succeed; misses return ErrNotFound
 }
 
-// new_client returns a Client backed by the default OS cache location.
-pub fn new_client() !Client {
-	return Client{
-		cache: new_cache()!
-	}
-}
-
 // new_client_with returns a Client backed by an explicit Cache. Useful for
 // tests and for users who supply `--cache-dir`.
 pub fn new_client_with(cache Cache, offline bool) Client {

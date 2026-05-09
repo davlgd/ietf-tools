@@ -5,7 +5,8 @@ import encoding.xml
 // rfc_editor_feed_url is the canonical RSS 2.0 feed of recently published
 // RFCs. The feed is small (a couple of KB), purpose-built for "what came
 // out lately?" and updated whenever the RFC Editor announces a new RFC.
-pub const rfc_editor_feed_url = '${rfc_editor_base}/rfcrss.xml'
+// Module-private: callers go through `Client.fetch_latest`.
+const rfc_editor_feed_url = '${rfc_editor_base}/rfcrss.xml'
 
 // FeedEntry mirrors the fields the RFC Editor RSS 2.0 feed publishes for
 // each recently released RFC.

@@ -43,9 +43,9 @@ fn test_fetch_metadata_decodes_typed_view() {
 	assert rfc.status == 'INTERNET STANDARD'
 }
 
-fn test_fetch_text_returns_cached_payload() {
+fn test_fetch_format_returns_cached_payload() {
 	c := make_test_client(false)
-	c.cache.put(text_url(8259), 'RFC 8259 plaintext fixture') or { panic(err) }
-	body := c.fetch_text(8259) or { panic(err) }
+	c.cache.put(format_url(8259, .text), 'RFC 8259 plaintext fixture') or { panic(err) }
+	body := c.fetch_format(8259, .text) or { panic(err) }
 	assert body.starts_with('RFC 8259')
 }
