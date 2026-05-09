@@ -64,16 +64,25 @@ fn first_text_in(node xml.XMLNode, tag string) string {
 // split_feed_title takes a feed `<title>` like "RFC 8259: The JavaScript
 // Object Notation (JSON) Data Interchange Format" and returns
 // (8259, "The JavaScript Object Notation (JSON) Data Interchange Format").
-// When the prefix is missing it returns (0, original) so that callers can
-// still display unparsable entries without losing them.
+// When the prefix is missing or the digits between "RFC " and ": " are not
+// purely numeric, it returns (0, original) so that callers can still display
+// unparsable entries without truncating the title.
 fn split_feed_title(s string) (int, string) {
 	if !s.starts_with('RFC ') {
 		return 0, s
 	}
 	rest := s[4..]
 	colon := rest.index(': ') or { return 0, s }
-	num := rest[..colon].int()
-	return num, rest[colon + 2..]
+	digits := rest[..colon]
+	if digits.len == 0 {
+		return 0, s
+	}
+	for c in digits {
+		if c < `0` || c > `9` {
+			return 0, s
+		}
+	}
+	return digits.int(), rest[colon + 2..]
 }
 
 // fetch_latest returns the parsed feed using the cache; subsequent calls

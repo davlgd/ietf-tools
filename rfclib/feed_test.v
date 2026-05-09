@@ -27,6 +27,14 @@ fn test_split_feed_title_falls_back_when_prefix_missing() {
 	assert title == 'Something off-spec'
 }
 
+fn test_split_feed_title_falls_back_when_digits_invalid() {
+	// Defensive: if the upstream ever drifts to "RFC abc: Title", we keep the
+	// raw string instead of silently turning it into (0, "Title").
+	num, title := split_feed_title('RFC abc: Strange Doc')
+	assert num == 0
+	assert title == 'RFC abc: Strange Doc'
+}
+
 fn test_parse_feed_real_snapshot() {
 	entries := parse_feed(feed_fixture()) or { panic(err) }
 	// The captured fixture has at least 10 items; we don't pin to an exact
