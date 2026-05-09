@@ -29,6 +29,13 @@ fn main() {
 		global:        true
 		default_value: ['']
 	})
+	root.add_flag(Flag{
+		flag:          .string
+		name:          'format'
+		abbrev:        'f'
+		description:   'RFC rendering to fetch: text (default), html, pdf, xml'
+		default_value: ['text']
+	})
 
 	root.add_command(Command{
 		name:          'info'
@@ -95,9 +102,13 @@ fn cmd_get(cmd Command) ! {
 		return
 	}
 	number := rfclib.parse_rfc_number(cmd.args[0])!
+	format_str := cmd.flags.get_string('format') or { 'text' }
+	format := rfclib.parse_format(format_str)!
 	client := make_client(cmd)!
-	body := client.fetch_text(number)!
-	println(body)
+	body := client.fetch_format(number, format)!
+	// Use `print` rather than `println`: keeps PDF/XML byte-exact and avoids a
+	// stray newline on text/html where the RFC payload already ends in one.
+	print(body)
 }
 
 fn cmd_info(cmd Command) ! {

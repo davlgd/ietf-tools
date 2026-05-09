@@ -99,9 +99,51 @@ pub fn metadata_url(number int) string {
 	return '${rfc_editor_base}/rfc/rfc${number}.json'
 }
 
+// Format enumerates the document renderings published by the RFC Editor.
+// `text` is universally available; `html` covers virtually every RFC; `pdf`
+// and `xml` are only published for RFCs authored in xml2rfc v3 (broadly
+// RFC 8650 onwards), so an `ErrNotFound` is the expected outcome on older
+// documents.
+pub enum Format {
+	text
+	html
+	pdf
+	xml
+}
+
+// extension returns the file-name suffix the RFC Editor uses for this format.
+pub fn (f Format) extension() string {
+	return match f {
+		.text { 'txt' }
+		.html { 'html' }
+		.pdf { 'pdf' }
+		.xml { 'xml' }
+	}
+}
+
+// parse_format turns a user-supplied string into a Format. Accepts the
+// common spellings users actually type (`text`/`txt`, `html`, `pdf`, `xml`)
+// and rejects anything else with a self-describing error.
+pub fn parse_format(input string) !Format {
+	return match input.to_lower().trim_space() {
+		'text', 'txt' { Format.text }
+		'html', 'htm' { Format.html }
+		'pdf' { Format.pdf }
+		'xml' { Format.xml }
+		else { error('unknown format: ${input} (expected: text, html, pdf, xml)') }
+	}
+}
+
+// format_url returns the canonical URL of an RFC rendered in `f`.
+pub fn format_url(number int, f Format) string {
+	return '${rfc_editor_base}/rfc/rfc${number}.${f.extension()}'
+}
+
 // text_url returns the canonical URL of the plain-text rendering of an RFC.
+// Equivalent to `format_url(number, .text)`; kept for callers that only ever
+// want the canonical text form.
 pub fn text_url(number int) string {
-	return '${rfc_editor_base}/rfc/rfc${number}.txt'
+	return format_url(number, .text)
 }
 
 // rfc_editor_info_url returns the human-facing RFC Editor information page,
@@ -125,7 +167,13 @@ pub fn parse_metadata(body string) !Rfc {
 // fetch_text returns the plain-text rendering of an RFC, going through the
 // rfclib cache so subsequent lookups hit local disk.
 pub fn (c Client) fetch_text(number int) !string {
-	return c.fetch(text_url(number))!
+	return c.fetch_format(number, .text)!
+}
+
+// fetch_format returns the body of an RFC in the requested format. The cache
+// stores each format under its own key (the URL differs by extension).
+pub fn (c Client) fetch_format(number int, f Format) !string {
+	return c.fetch(format_url(number, f))!
 }
 
 // fetch_metadata returns the typed metadata for an RFC, going through the

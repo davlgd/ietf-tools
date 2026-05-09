@@ -47,6 +47,43 @@ fn test_info_page_urls() {
 	assert datatracker_url(1149) == 'https://datatracker.ietf.org/doc/rfc1149/'
 }
 
+fn test_format_extension_and_url() {
+	assert Format.text.extension() == 'txt'
+	assert Format.html.extension() == 'html'
+	assert Format.pdf.extension() == 'pdf'
+	assert Format.xml.extension() == 'xml'
+	assert format_url(8259, .text) == 'https://www.rfc-editor.org/rfc/rfc8259.txt'
+	assert format_url(8259, .html) == 'https://www.rfc-editor.org/rfc/rfc8259.html'
+	assert format_url(9000, .pdf) == 'https://www.rfc-editor.org/rfc/rfc9000.pdf'
+	assert format_url(9000, .xml) == 'https://www.rfc-editor.org/rfc/rfc9000.xml'
+}
+
+fn test_parse_format_accepts_common_spellings() {
+	cases := {
+		'text': Format.text
+		'TEXT': Format.text
+		'txt':  Format.text
+		'html': Format.html
+		'HTML': Format.html
+		'htm':  Format.html
+		'pdf':  Format.pdf
+		'PDF':  Format.pdf
+		'xml':  Format.xml
+	}
+	for input, expected in cases {
+		got := parse_format(input) or { panic('rejected ${input}: ${err}') }
+		assert got == expected, 'input=${input}'
+	}
+}
+
+fn test_parse_format_rejects_unknown() {
+	for bad in ['', '   ', 'doc', 'epub', 'asciidoc'] {
+		if _ := parse_format(bad) {
+			assert false, 'accepted invalid format ${bad}'
+		}
+	}
+}
+
 fn test_parse_metadata_internet_standard() {
 	rfc := parse_metadata(fixture('rfc8259.json')) or { panic(err) }
 	assert rfc.doc_id == 'RFC8259'
