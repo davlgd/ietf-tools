@@ -1,0 +1,19 @@
+# Build outputs
+/rfc
+/rfc.exe
+*.exe
+*.o
+*.tmp.c
+
+# V cache
+.vcache/
+.vmodules/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local cache used by ad-hoc runs
+.cache-local/

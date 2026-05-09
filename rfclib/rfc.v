@@ -1,0 +1,119 @@
+module rfclib
+
+import x.json2
+
+// rfc_editor_base is the canonical RFC Editor host. RFC payloads (text,
+// metadata JSON, errata) are mirrored at predictable URLs derived from a
+// document number.
+pub const rfc_editor_base = 'https://www.rfc-editor.org'
+
+// Rfc is the typed view of the per-RFC metadata document published by the
+// RFC Editor at `https://www.rfc-editor.org/rfc/rfcNNNN.json`.
+//
+// Field names match the upstream JSON schema; renames cover the few keys
+// where the upstream uses a singular form (`format`) for what is in fact a
+// list. `page_count` is published as a string upstream and converted on
+// decode by `x.json2`.
+pub struct Rfc {
+pub:
+	doc_id       string
+	title        string
+	authors      []string
+	formats      []string @[json: 'format']
+	page_count   int      @[json: 'page_count']
+	pub_status   string   @[json: 'pub_status']
+	status       string
+	source       string
+	abstract     string
+	pub_date     string @[json: 'pub_date']
+	keywords     []string
+	obsoletes    []string
+	obsoleted_by []string @[json: 'obsoleted_by']
+	updates      []string
+	updated_by   []string @[json: 'updated_by']
+	see_also     []string @[json: 'see_also']
+	doi          string
+	errata_url   string @[json: 'errata_url']
+	draft        string
+}
+
+// number returns the integer document number derived from `doc_id`
+// (for example `RFC8259` -> 8259).
+pub fn (r Rfc) number() int {
+	return r.doc_id.trim_string_left('RFC').int()
+}
+
+// is_obsolete reports whether the RFC has been replaced by a later one.
+pub fn (r Rfc) is_obsolete() bool {
+	return r.obsoleted_by.len > 0
+}
+
+// parse_rfc_number turns user input into a positive RFC number. It accepts
+// the common surface forms users actually type:
+//
+//   "8259"       -> 8259
+//   "RFC8259"    -> 8259
+//   "rfc 8259"   -> 8259
+//   "rfc-8259"   -> 8259
+//
+// Leading zeros, negative values, or trailing junk are rejected with
+// ErrInvalidNumber so that we never silently accept malformed input.
+pub fn parse_rfc_number(input string) !int {
+	mut digits := input.to_lower().trim_space()
+	if digits.starts_with('rfc') {
+		digits = digits[3..].trim_left('- ')
+	}
+	if digits.len == 0 {
+		return ErrInvalidNumber{
+			value: input
+		}
+	}
+	for c in digits {
+		if c < `0` || c > `9` {
+			return ErrInvalidNumber{
+				value: input
+			}
+		}
+	}
+	if digits.len > 1 && digits[0] == `0` {
+		return ErrInvalidNumber{
+			value: input
+		}
+	}
+	n := digits.int()
+	if n <= 0 {
+		return ErrInvalidNumber{
+			value: input
+		}
+	}
+	return n
+}
+
+// metadata_url returns the canonical URL of the JSON metadata document for
+// the given RFC number.
+pub fn metadata_url(number int) string {
+	return '${rfc_editor_base}/rfc/rfc${number}.json'
+}
+
+// text_url returns the canonical URL of the plain-text rendering of an RFC.
+pub fn text_url(number int) string {
+	return '${rfc_editor_base}/rfc/rfc${number}.txt'
+}
+
+// parse_metadata decodes a per-RFC JSON document into a typed Rfc value.
+pub fn parse_metadata(body string) !Rfc {
+	return json2.decode[Rfc](body)!
+}
+
+// fetch_text returns the plain-text rendering of an RFC, going through the
+// rfclib cache so subsequent lookups hit local disk.
+pub fn (c Client) fetch_text(number int) !string {
+	return c.fetch(text_url(number))!
+}
+
+// fetch_metadata returns the typed metadata for an RFC, going through the
+// rfclib cache.
+pub fn (c Client) fetch_metadata(number int) !Rfc {
+	body := c.fetch(metadata_url(number))!
+	return parse_metadata(body)!
+}
