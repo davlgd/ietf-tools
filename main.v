@@ -273,7 +273,9 @@ fn cmd_bortzmeyer(cmd Command) ! {
 		println(url)
 		return
 	}
-	println('Opening ${url}')
+	// Status message goes to stderr so stdout stays empty for callers piping
+	// the command into a script.
+	eprintln('Opening ${url}')
 	os.open_uri(url)!
 }
 
