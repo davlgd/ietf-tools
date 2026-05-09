@@ -10,7 +10,7 @@ import rfclib
 fn main() {
 	mut root := Command{
 		name:        'rfc'
-		description: 'Read and inspect IETF RFCs from the command line.'
+		description: 'Read and inspect IETF RFCs from the command line'
 		version:     rfclib.version
 		usage:       '<rfc-number>'
 		execute:     cmd_get
@@ -19,20 +19,20 @@ fn main() {
 	root.add_flag(Flag{
 		flag:        .bool
 		name:        'offline'
-		description: 'Only use the local cache; do not perform network requests.'
+		description: 'Only use the local cache; do not perform network requests'
 		global:      true
 	})
 	root.add_flag(Flag{
 		flag:          .string
 		name:          'cache-dir'
-		description:   'Override the cache directory (default: OS user-cache + ietf-tools).'
+		description:   'Override the cache directory (default: OS user-cache + ietf-tools)'
 		global:        true
 		default_value: ['']
 	})
 
 	root.add_command(Command{
 		name:          'info'
-		description:   'Show metadata for an RFC: status, dates, obsoletes, errata.'
+		description:   'Show metadata for an RFC: status, dates, obsoletes, errata'
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_info
@@ -40,7 +40,7 @@ fn main() {
 
 	mut bortzmeyer_cmd := Command{
 		name:          'bortzmeyer'
-		description:   "Open Stéphane Bortzmeyer's analysis for an RFC in your browser."
+		description:   "Open Stéphane Bortzmeyer's analysis for an RFC in your browser"
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_bortzmeyer
@@ -48,22 +48,22 @@ fn main() {
 	bortzmeyer_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'print'
-		description: 'Only print the URL on stdout; do not launch a browser.'
+		description: 'Only print the URL on stdout; do not launch a browser'
 	})
 	root.add_command(bortzmeyer_cmd)
 
 	mut cache_cmd := Command{
 		name:        'cache'
-		description: 'Inspect or wipe the on-disk cache.'
+		description: 'Inspect or wipe the on-disk cache'
 	}
 	cache_cmd.add_command(Command{
 		name:        'path'
-		description: 'Print the cache directory.'
+		description: 'Print the cache directory'
 		execute:     cmd_cache_path
 	})
 	cache_cmd.add_command(Command{
 		name:        'clear'
-		description: 'Remove every cached entry.'
+		description: 'Remove every cached entry'
 		execute:     cmd_cache_clear
 	})
 	root.add_command(cache_cmd)
@@ -113,7 +113,7 @@ fn cmd_bortzmeyer(cmd Command) ! {
 
 	client := make_client(cmd)!
 	if !client.bortzmeyer_exists(number)! {
-		eprintln('rfc: no Bortzmeyer article for RFC ${number} (${url}).')
+		eprintln('rfc: no Bortzmeyer article for RFC ${number} (${url})')
 		exit(1)
 	}
 	if print_only {

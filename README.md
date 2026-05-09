@@ -11,16 +11,15 @@ reporting stays consistent across the suite as it grows.
 
 ## Status
 
-- ✅ `rfc <number>` — fetch and print the plain-text RFC.
+- ✅ `rfc <number>` — fetch and print the plain-text RFC
 - ✅ `rfc info <number>` — show metadata (status, authors, dates, obsoletes,
-  errata, DOI…).
-- ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk
-  cache.
+  errata, DOI…)
+- ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk cache
 - ✅ `rfc bortzmeyer <number>` — open Stéphane Bortzmeyer's French-language
-  analysis of the RFC in your default browser; exits with an error if no
-  article exists. Add `--print` to just emit the URL on stdout.
-- ✅ `--offline` — never touch the network, only use the local cache.
-- 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`.
+  analysis of the RFC in your default browser, with `--print` to emit the URL
+  instead of launching one
+- ✅ `--offline` — never touch the network, only use the local cache
+- 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`
 
 See [`docs/roadmap.md`](docs/roadmap.md) for the full plan.
 
