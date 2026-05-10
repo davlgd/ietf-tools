@@ -353,8 +353,7 @@ fn print_xref(xr rfclib.Xref) {
 	print_xref_section('Updates', xr.updates)
 	print_xref_section('Updated by', xr.updated_by)
 	print_xref_section('See also', xr.see_also)
-	if xr.obsoletes.len + xr.obsoleted_by.len + xr.updates.len + xr.updated_by.len +
-		xr.see_also.len == 0 {
+	if xr.obsoletes.len + xr.obsoleted_by.len + xr.updates.len + xr.updated_by.len + xr.see_also.len == 0 {
 		println('  (no cross-references)')
 	}
 }

@@ -176,7 +176,7 @@ fn strip_iana_pis(body string) string {
 }
 
 fn is_all_digits(s string) bool {
-	if s.len == 0 {
+	if s == '' {
 		return false
 	}
 	for c in s {
