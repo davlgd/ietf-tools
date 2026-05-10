@@ -77,6 +77,21 @@ fn main() {
 	})
 	root.add_command(search_cmd)
 
+	mut track_cmd := Command{
+		name:          'track'
+		description:   'Show the IETF Datatracker state of an Internet-Draft'
+		usage:         '<draft-name>'
+		required_args: 1
+		execute:       cmd_track
+	}
+	add_output_format_flag(mut track_cmd)
+	track_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and re-fetch from Datatracker'
+	})
+	root.add_command(track_cmd)
+
 	mut errata_cmd := Command{
 		name:          'errata'
 		description:   'List errata reported for an RFC (RFC Editor catalogue)'
@@ -220,6 +235,77 @@ fn rfc_link(number int) string {
 	}
 	url := rfclib.rfc_editor_info_url(number)
 	return '${pad}\x1b]8;;${url}\x1b\\${digits}\x1b]8;;\x1b\\'
+}
+
+fn cmd_track(cmd Command) ! {
+	name := cmd.args[0].trim_space()
+	if name == '' || name.contains(' ') {
+		return error('invalid draft name: ${cmd.args[0]} (expected fully-qualified, e.g. draft-ietf-quic-transport)')
+	}
+	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
+
+	client := make_client(cmd)!
+	draft := if refresh { client.refresh_draft(name)! } else { client.fetch_draft(name)! }
+	state_index := client.fetch_states_index()!
+	states := rfclib.resolve_states(draft, state_index)
+
+	match format.to_lower().trim_space() {
+		'text' {
+			print_track(draft, states)
+		}
+		'json' {
+			println(json2.encode({
+				'draft':  json2.Any(json2.encode(draft))
+				'states': json2.Any(json2.encode(states))
+			},
+				prettify: true
+			))
+		}
+		else {
+			return error('unknown format: ${format} (expected: text, json)')
+		}
+	}
+}
+
+fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
+	println('${d.name}-${d.rev}')
+	if d.pages > 0 {
+		println('  Pages:      ${d.pages}')
+	}
+	stream := d.stream_slug()
+	if stream != '' {
+		println('  Stream:     ${stream}')
+	}
+	intended := d.intended_slug()
+	if intended != '' {
+		println('  Intended:   ${intended}')
+	}
+	std_lvl := d.std_level_slug()
+	if std_lvl != '' && std_lvl != intended {
+		println('  Status:     ${std_lvl}')
+	}
+	if rfc := d.rfc_number {
+		println('  Published:  RFC ${rfc}')
+	}
+	if expires := d.expires {
+		if expires != '' {
+			println('  Expires:    ${expires}')
+		}
+	}
+	if states.len > 0 {
+		println('  States:')
+		for s in states {
+			println('    ${s.type_slug:-22}  ${s.label}')
+		}
+	}
+	if d.abstract != '' {
+		println('')
+		println('Abstract:')
+		for line in d.abstract.split_into_lines() {
+			println('  ${line}')
+		}
+	}
 }
 
 fn cmd_errata(cmd Command) ! {
