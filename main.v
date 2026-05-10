@@ -77,6 +77,21 @@ fn main() {
 	})
 	root.add_command(search_cmd)
 
+	mut errata_cmd := Command{
+		name:          'errata'
+		description:   'List errata reported for an RFC (RFC Editor catalogue)'
+		usage:         '<rfc-number>'
+		required_args: 1
+		execute:       cmd_errata
+	}
+	add_output_format_flag(mut errata_cmd)
+	errata_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and redownload the errata catalogue'
+	})
+	root.add_command(errata_cmd)
+
 	mut latest_cmd := Command{
 		name:        'latest'
 		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
@@ -205,6 +220,39 @@ fn rfc_link(number int) string {
 	}
 	url := rfclib.rfc_editor_info_url(number)
 	return '${pad}\x1b]8;;${url}\x1b\\${digits}\x1b]8;;\x1b\\'
+}
+
+fn cmd_errata(cmd Command) ! {
+	number := rfclib.parse_rfc_number(cmd.args[0])!
+	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
+
+	client := make_client(cmd)!
+	errata := if refresh {
+		client.refresh_errata_for(number)!
+	} else {
+		client.errata_for(number)!
+	}
+
+	match format.to_lower().trim_space() {
+		'text' {
+			if errata.len == 0 {
+				eprintln('rfc: no errata reported for RFC ${number}')
+				exit(1)
+			}
+			for e in errata {
+				section := e.section or { '' }
+				section_col := if section == '' { '—' } else { section }
+				println('${e.errata_id:5}  ${e.errata_status_code:-25}  ${e.errata_type_code:-10}  ${e.submit_date}  ${section_col}  ${e.submitter_name}')
+			}
+		}
+		'json' {
+			println(json2.encode(errata, prettify: true))
+		}
+		else {
+			return error('unknown format: ${format} (expected: text, json)')
+		}
+	}
 }
 
 fn cmd_search(cmd Command) ! {
