@@ -117,6 +117,21 @@ fn main() {
 	})
 	root.add_command(errata_cmd)
 
+	mut iana_cmd := Command{
+		name:          'iana'
+		description:   'Look up a code in an IANA registry (e.g. iana http-status-codes 404)'
+		usage:         '<registry> <code>'
+		required_args: 2
+		execute:       cmd_iana
+	}
+	add_output_format_flag(mut iana_cmd)
+	iana_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and redownload the registry'
+	})
+	root.add_command(iana_cmd)
+
 	mut latest_cmd := Command{
 		name:        'latest'
 		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
@@ -428,6 +443,53 @@ fn cmd_search(cmd Command) ! {
 		}
 		else {
 			return error('unknown format: ${format} (expected: text, json)')
+		}
+	}
+}
+
+fn cmd_iana(cmd Command) ! {
+	registry := cmd.args[0].trim_space()
+	code := cmd.args[1].trim_space()
+	if registry == '' || registry.contains(' ') || registry.contains('/') {
+		return error('invalid registry slug: ${cmd.args[0]}')
+	}
+	if code == '' {
+		return error('empty code')
+	}
+	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
+
+	client := make_client(cmd)!
+	rec := if refresh {
+		client.refresh_iana(registry, code)!
+	} else {
+		client.fetch_iana(registry, code)!
+	}
+
+	match format.to_lower().trim_space() {
+		'text' { print_iana(registry, rec) }
+		'json' { println(json2.encode(rec, prettify: true)) }
+		else { return error('unknown format: ${format} (expected: text, json)') }
+	}
+}
+
+fn print_iana(registry string, rec rfclib.IanaRecord) {
+	println('${registry}:')
+	mut width := 0
+	for f in rec.fields {
+		if f.name.len > width {
+			width = f.name.len
+		}
+	}
+	for f in rec.fields {
+		pad := if f.name.len < width { ' '.repeat(width - f.name.len) } else { '' }
+		println('  ${f.name}${pad}  ${f.value}')
+	}
+	if rec.refs.len > 0 {
+		println('  References:')
+		for r in rec.refs {
+			label := if r.text == '' { r.data } else { r.text }
+			println('    [${r.typ}] ${label}')
 		}
 	}
 }
