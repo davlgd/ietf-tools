@@ -92,6 +92,16 @@ fn main() {
 	})
 	root.add_command(track_cmd)
 
+	mut xref_cmd := Command{
+		name:          'xref'
+		description:   'Show the cross-reference graph of an RFC: obsoletes, updates, see also'
+		usage:         '<rfc-number>'
+		required_args: 1
+		execute:       cmd_xref
+	}
+	add_output_format_flag(mut xref_cmd)
+	root.add_command(xref_cmd)
+
 	mut errata_cmd := Command{
 		name:          'errata'
 		description:   'List errata reported for an RFC (RFC Editor catalogue)'
@@ -304,6 +314,48 @@ fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
 		println('Abstract:')
 		for line in d.abstract.split_into_lines() {
 			println('  ${line}')
+		}
+	}
+}
+
+fn cmd_xref(cmd Command) ! {
+	number := rfclib.parse_rfc_number(cmd.args[0])!
+	format := cmd.flags.get_string('format') or { 'text' }
+	client := make_client(cmd)!
+	xr := client.fetch_xref(number)!
+
+	match format.to_lower().trim_space() {
+		'text' { print_xref(xr) }
+		'json' { println(json2.encode(xr, prettify: true)) }
+		else { return error('unknown format: ${format} (expected: text, json)') }
+	}
+}
+
+fn print_xref(xr rfclib.Xref) {
+	println('${xr.rfc.doc_id} — ${xr.rfc.title.trim_space()}')
+	print_xref_section('Obsoletes', xr.obsoletes)
+	print_xref_section('Obsoleted by', xr.obsoleted_by)
+	print_xref_section('Updates', xr.updates)
+	print_xref_section('Updated by', xr.updated_by)
+	print_xref_section('See also', xr.see_also)
+	if xr.obsoletes.len + xr.obsoleted_by.len + xr.updates.len + xr.updated_by.len +
+		xr.see_also.len == 0 {
+		println('  (no cross-references)')
+	}
+}
+
+fn print_xref_section(label string, entries []rfclib.XrefEntry) {
+	if entries.len == 0 {
+		return
+	}
+	println('  ${label}:')
+	for e in entries {
+		if e.number > 0 {
+			title := if e.title == '' { '(metadata unavailable)' } else { e.title }
+			date := if e.pub_date == '' { '' } else { '  (${e.pub_date})' }
+			println('    ${rfc_link(e.number)}  ${title}${date}')
+		} else {
+			println('    ${e.doc_id}')
 		}
 	}
 }
