@@ -673,6 +673,20 @@ fn cmd_bortzmeyer(cmd Command) ! {
 	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	url := rfclib.bortzmeyer_url(number)
 	print_only := cmd.flags.get_bool('print') or { false }
+	offline := cmd.flags.get_bool('offline') or { false }
+
+	// In offline mode we cannot check the article exists (no HEAD), so
+	// surface the URL verbatim and let the user decide. This is safer
+	// than failing the entire command for a check the user disabled.
+	if offline {
+		if print_only {
+			println(url)
+			return
+		}
+		eprintln('Opening ${url} (existence not verified in offline mode)')
+		os.open_uri(url) or { die(err.msg()) }
+		return
+	}
 
 	client := make_client(cmd) or { die(err.msg()) }
 	exists := client.bortzmeyer_exists(number) or { die(err.msg()) }
