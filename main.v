@@ -208,10 +208,10 @@ fn reorder_args(args []string) []string {
 	return out
 }
 
-const reorder_value_flags = ['-f', '--format', '--cache-dir', '-s', '--status', '-n', '--limit']
+const reorder_value_flags = ['-f', '--format', '--cache-dir', '-s', '--status', '-n', '--limit']!
 const reorder_subcommands = ['info', 'search', 'track', 'xref', 'errata', 'iana', 'latest',
-	'bortzmeyer', 'cache', 'help', 'version', 'man']
-const reorder_cache_subs = ['path', 'clear']
+	'bortzmeyer', 'cache', 'help', 'version', 'man']!
+const reorder_cache_subs = ['path', 'clear']!
 
 // die prints a friendly, prefixed error message on stderr and exits the
 // process with status 1. It is the single channel for user-visible errors:
