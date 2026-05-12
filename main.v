@@ -38,28 +38,21 @@ fn main() {
 		default_value: ['text']
 	})
 
-	mut info_cmd := Command{
-		name:          'info'
-		description:   'Show metadata for an RFC (status, dates, obsoletes)'
-		usage:         '<rfc-number>'
-		required_args: 1
-		execute:       cmd_info
-	}
-	add_output_format_flag(mut info_cmd)
-	info_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and re-fetch the metadata'
-	})
-	root.add_command(info_cmd)
+	root.add_command(data_cmd(DataCmd{
+		name:         'info'
+		description:  'Show metadata for an RFC (status, dates, obsoletes)'
+		usage:        '<rfc-number>'
+		execute:      cmd_info
+		refresh_desc: 'Bypass the cache and re-fetch the metadata'
+	}))
 
-	mut search_cmd := Command{
-		name:          'search'
-		description:   'Search RFCs by title token(s) on the IETF Datatracker'
-		usage:         '<token>...'
-		required_args: 1
-		execute:       cmd_search
-	}
+	mut search_cmd := data_cmd(DataCmd{
+		name:         'search'
+		description:  'Search RFCs by title token(s) on the IETF Datatracker'
+		usage:        '<token>...'
+		execute:      cmd_search
+		refresh_desc: 'Bypass the cache and re-query Datatracker'
+	})
 	search_cmd.add_flag(Flag{
 		flag:          .string
 		name:          'status'
@@ -74,86 +67,48 @@ fn main() {
 		description:   'Maximum number of hits to return (default 20)'
 		default_value: ['20']
 	})
-	add_output_format_flag(mut search_cmd)
-	search_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and re-query Datatracker'
-	})
 	root.add_command(search_cmd)
 
-	mut track_cmd := Command{
-		name:          'track'
-		description:   'Show the Datatracker state of an Internet-Draft'
-		usage:         '<draft-name>'
-		required_args: 1
-		execute:       cmd_track
-	}
-	add_output_format_flag(mut track_cmd)
-	track_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and re-fetch from Datatracker'
-	})
-	root.add_command(track_cmd)
+	root.add_command(data_cmd(DataCmd{
+		name:         'track'
+		description:  'Show the Datatracker state of an Internet-Draft'
+		usage:        '<draft-name>'
+		execute:      cmd_track
+		refresh_desc: 'Bypass the cache and re-fetch from Datatracker'
+	}))
 
-	mut xref_cmd := Command{
-		name:          'xref'
-		description:   'Cross-reference graph: obsoletes, updates, see also'
-		usage:         '<rfc-number>'
-		required_args: 1
-		execute:       cmd_xref
-	}
-	add_output_format_flag(mut xref_cmd)
-	xref_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and re-fetch every referenced RFC'
-	})
-	root.add_command(xref_cmd)
+	root.add_command(data_cmd(DataCmd{
+		name:         'xref'
+		description:  'Cross-reference graph: obsoletes, updates, see also'
+		usage:        '<rfc-number>'
+		execute:      cmd_xref
+		refresh_desc: 'Bypass the cache and re-fetch every referenced RFC'
+	}))
 
-	mut errata_cmd := Command{
-		name:          'errata'
-		description:   'List errata reported for an RFC'
-		usage:         '<rfc-number>'
-		required_args: 1
-		execute:       cmd_errata
-	}
-	add_output_format_flag(mut errata_cmd)
-	errata_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and redownload the catalogue'
-	})
-	root.add_command(errata_cmd)
+	root.add_command(data_cmd(DataCmd{
+		name:         'errata'
+		description:  'List errata reported for an RFC'
+		usage:        '<rfc-number>'
+		execute:      cmd_errata
+		refresh_desc: 'Bypass the cache and redownload the catalogue'
+	}))
 
-	mut iana_cmd := Command{
+	root.add_command(data_cmd(DataCmd{
 		name:          'iana'
 		description:   'Look up a code in an IANA registry'
 		usage:         '<registry> <code>'
 		required_args: 2
 		execute:       cmd_iana
-	}
-	add_output_format_flag(mut iana_cmd)
-	iana_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and redownload the registry'
-	})
-	root.add_command(iana_cmd)
+		refresh_desc:  'Bypass the cache and redownload the registry'
+	}))
 
-	mut latest_cmd := Command{
-		name:        'latest'
-		description: 'List the most recent RFCs (RFC Editor RSS feed)'
-		execute:     cmd_latest
-	}
-	add_output_format_flag(mut latest_cmd)
-	latest_cmd.add_flag(Flag{
-		flag:        .bool
-		name:        'refresh'
-		description: 'Bypass the cache and re-fetch the feed'
-	})
-	root.add_command(latest_cmd)
+	root.add_command(data_cmd(DataCmd{
+		name:          'latest'
+		description:   'List the most recent RFCs (RFC Editor RSS feed)'
+		required_args: 0
+		execute:       cmd_latest
+		refresh_desc:  'Bypass the cache and re-fetch the feed'
+	}))
 
 	mut bortzmeyer_cmd := Command{
 		name:          'bortzmeyer'
@@ -305,6 +260,37 @@ fn render[T](format string, payload T, render_text fn (T)) {
 		'json' { println(json2.encode(payload, prettify: true)) }
 		else { die('unknown format: ${format} (expected: text, json)') }
 	}
+}
+
+// DataCmd is the shared specification of every subcommand that exposes
+// the `-f/--format` text/json toggle and the `--refresh` cache-bypass
+// flag — every command except `bortzmeyer` and `cache`. Funnelling the
+// boilerplate through `data_cmd` ensures the three knobs that matter
+// (name, description, execute) stay close together at each call site.
+struct DataCmd {
+	name          string
+	description   string
+	usage         string
+	required_args int            = 1
+	execute       fn (Command) ! = unsafe { nil }
+	refresh_desc  string
+}
+
+fn data_cmd(spec DataCmd) Command {
+	mut cmd := Command{
+		name:          spec.name
+		description:   spec.description
+		usage:         spec.usage
+		required_args: spec.required_args
+		execute:       spec.execute
+	}
+	add_output_format_flag(mut cmd)
+	cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: spec.refresh_desc
+	})
+	return cmd
 }
 
 // add_output_format_flag attaches the `-f/--format` flag (text|json) used by
