@@ -307,6 +307,18 @@ fn die_on_err(err IError, not_found_label string) {
 	die(msg)
 }
 
+// render dispatches a typed payload to either a text renderer or JSON,
+// based on the user-supplied `format`. Centralising the dispatch keeps
+// the text/json/error wording identical across every subcommand that
+// honours `-f`.
+fn render[T](format string, payload T, render_text fn (T)) {
+	match format.to_lower().trim_space() {
+		'text' { render_text(payload) }
+		'json' { println(json2.encode(payload, prettify: true)) }
+		else { die('unknown format: ${format} (expected: text, json)') }
+	}
+}
+
 // add_output_format_flag attaches the `-f/--format` flag (text|json) used by
 // every subcommand that renders structured data — info, search, latest. The
 // helper keeps the description and default value identical across commands
@@ -392,11 +404,7 @@ fn cmd_info(cmd Command) ! {
 	} else {
 		client.fetch_metadata(number) or { die_on_err(err, 'RFC ${number}') }
 	}
-	match format.to_lower().trim_space() {
-		'text' { print_info(rfc) }
-		'json' { println(json2.encode(rfc, prettify: true)) }
-		else { die('unknown format: ${format} (expected: text, json)') }
-	}
+	render(format, rfc, print_info)
 }
 
 // rfc_link renders an RFC number padded to five columns. When stdout is a
@@ -435,22 +443,12 @@ fn cmd_track(cmd Command) ! {
 	state_index := client.fetch_states_index() or { die_on_err(err, 'Datatracker state catalogue') }
 	states := rfclib.resolve_states(draft, state_index)
 
-	match format.to_lower().trim_space() {
-		'text' {
-			print_track(draft, states)
-		}
-		'json' {
-			println(json2.encode(TrackOutput{
-				draft:  draft
-				states: states
-			},
-				prettify: true
-			))
-		}
-		else {
-			die('unknown format: ${format} (expected: text, json)')
-		}
-	}
+	render(format, TrackOutput{
+		draft:  draft
+		states: states
+	}, fn (o TrackOutput) {
+		print_track(o.draft, o.states)
+	})
 }
 
 // TrackOutput is the typed JSON shape emitted by `rfc track -f json`.
@@ -511,12 +509,7 @@ fn cmd_xref(cmd Command) ! {
 	} else {
 		client.fetch_xref(number) or { die_on_err(err, 'RFC ${number}') }
 	}
-
-	match format.to_lower().trim_space() {
-		'text' { print_xref(xr) }
-		'json' { println(json2.encode(xr, prettify: true)) }
-		else { die('unknown format: ${format} (expected: text, json)') }
-	}
+	render(format, xr, print_xref)
 }
 
 fn print_xref(xr rfclib.Xref) {
@@ -558,24 +551,17 @@ fn cmd_errata(cmd Command) ! {
 	} else {
 		client.errata_for(number) or { die_on_err(err, 'errata for RFC ${number}') }
 	}
+	if errata.len == 0 && format.to_lower().trim_space() == 'text' {
+		die('no errata reported for RFC ${number}')
+	}
+	render(format, errata, print_errata)
+}
 
-	match format.to_lower().trim_space() {
-		'text' {
-			if errata.len == 0 {
-				die('no errata reported for RFC ${number}')
-			}
-			for e in errata {
-				section := e.section or { '' }
-				section_col := if section == '' { '—' } else { section }
-				println('${e.errata_id:5}  ${e.errata_status_code:-25}  ${e.errata_type_code:-10}  ${e.submit_date}  ${section_col}  ${e.submitter_name}')
-			}
-		}
-		'json' {
-			println(json2.encode(errata, prettify: true))
-		}
-		else {
-			die('unknown format: ${format} (expected: text, json)')
-		}
+fn print_errata(errata []rfclib.Erratum) {
+	for e in errata {
+		section := e.section or { '' }
+		section_col := if section == '' { '—' } else { section }
+		println('${e.errata_id:5}  ${e.errata_status_code:-25}  ${e.errata_type_code:-10}  ${e.submit_date}  ${section_col}  ${e.submitter_name}')
 	}
 }
 
@@ -604,26 +590,19 @@ fn cmd_search(cmd Command) ! {
 	} else {
 		client.search(query) or { die_on_err(err, 'Datatracker search') }
 	}
+	if hits.len == 0 && format.to_lower().trim_space() == 'text' {
+		die('no match')
+	}
+	render(format, hits, print_search_hits)
+}
 
-	match format.to_lower().trim_space() {
-		'text' {
-			if hits.len == 0 {
-				die('no match')
-			}
-			for h in hits {
-				slug := h.std_level_short()
-				date := h.updated_date()
-				date_col := if date == '' { '          ' } else { date }
-				slug_col := if slug == '' { '     ' } else { '${slug:5}' }
-				println('${rfc_link(h.number)}  ${slug_col}  ${date_col}  ${h.title}')
-			}
-		}
-		'json' {
-			println(json2.encode(hits, prettify: true))
-		}
-		else {
-			die('unknown format: ${format} (expected: text, json)')
-		}
+fn print_search_hits(hits []rfclib.DatatrackerHit) {
+	for h in hits {
+		slug := h.std_level_short()
+		date := h.updated_date()
+		date_col := if date == '' { '          ' } else { date }
+		slug_col := if slug == '' { '     ' } else { '${slug:5}' }
+		println('${rfc_link(h.number)}  ${slug_col}  ${date_col}  ${h.title}')
 	}
 }
 
@@ -645,12 +624,9 @@ fn cmd_iana(cmd Command) ! {
 	} else {
 		client.fetch_iana(registry, code) or { die_on_err(err, '${registry} registry') }
 	}
-
-	match format.to_lower().trim_space() {
-		'text' { print_iana(registry, rec) }
-		'json' { println(json2.encode(rec, prettify: true)) }
-		else { die('unknown format: ${format} (expected: text, json)') }
-	}
+	render(format, rec, fn [registry] (r rfclib.IanaRecord) {
+		print_iana(registry, r)
+	})
 }
 
 fn print_iana(registry string, rec rfclib.IanaRecord) {
@@ -684,19 +660,12 @@ fn cmd_latest(cmd Command) ! {
 	} else {
 		client.fetch_latest() or { die_on_err(err, 'RFC Editor feed') }
 	}
+	render(format, entries, print_latest)
+}
 
-	match format.to_lower().trim_space() {
-		'text' {
-			for e in entries {
-				println('${rfc_link(e.number)}  ${e.title}')
-			}
-		}
-		'json' {
-			println(json2.encode(entries, prettify: true))
-		}
-		else {
-			die('unknown format: ${format} (expected: text, json)')
-		}
+fn print_latest(entries []rfclib.FeedEntry) {
+	for e in entries {
+		println('${rfc_link(e.number)}  ${e.title}')
 	}
 }
 
