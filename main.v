@@ -541,8 +541,12 @@ fn cmd_search(cmd Command) ! {
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
+	tokens := cmd.args.map(it.trim_space()).filter(it != '')
+	if tokens.len == 0 {
+		die('search needs at least one non-empty token')
+	}
 	query := rfclib.SearchQuery{
-		title_tokens: cmd.args
+		title_tokens: tokens
 		std_level:    status
 		limit:        limit
 	}
