@@ -56,6 +56,23 @@ fn test_reorder_args_handles_no_args() {
 	assert reorder_args(['rfc']) == ['rfc']
 }
 
+fn test_reorder_args_handles_flags_before_and_after_subcommand() {
+	// Mixed placement: `--offline` precedes the subcommand, `--print`
+	// follows the positional. Both must end up between the subcommand
+	// name and the positional so the cli module attaches them to the
+	// right command.
+	out := reorder_args(['rfc', '--offline', 'bortzmeyer', '8259', '--print'])
+	assert out == ['rfc', 'bortzmeyer', '--offline', '--print', '8259']
+}
+
+fn test_reorder_args_moves_global_flag_after_subcommand() {
+	// Without this anchor, `rfc --offline info 8259` keeps `--offline`
+	// at the root command, which can shadow a subcommand-local flag of
+	// the same name.
+	out := reorder_args(['rfc', '--offline', 'info', '8259'])
+	assert out == ['rfc', 'info', '--offline', '8259']
+}
+
 fn test_reorder_args_does_not_swallow_lone_dash() {
 	// A bare `-` is conventionally a stdin/stdout sentinel and must be
 	// treated as a positional, not a flag.

@@ -212,23 +212,40 @@ fn reorder_args(args []string) []string {
 		'cache', 'help', 'version', 'man']
 	cache_subs := ['path', 'clear']
 
-	mut prefix := [args[0]]
-	mut start := 1
-	if start < args.len && args[start] in subcommands {
-		prefix << args[start]
-		// Capture `cache <path|clear>` as part of the prefix so the
-		// sub-subcommand stays anchored before any reordered flags.
-		if args[start] == 'cache' && start + 1 < args.len && args[start + 1] in cache_subs {
-			prefix << args[start + 1]
-			start += 2
+	// Pass 1: gobble any leading flags (those placed before the subcommand
+	// name, like `rfc --offline bortzmeyer 8259`). They must be moved past
+	// the subcommand-name token so the cli module's per-command parse_flags
+	// sees them. Without this step, a global flag emitted before the
+	// subcommand could shadow a homonymous subcommand flag.
+	mut leading_flags := []string{}
+	mut i := 1
+	for i < args.len && args[i].starts_with('-') && args[i] != '-' {
+		t := args[i]
+		leading_flags << t
+		if t in value_flags && i + 1 < args.len && !args[i + 1].starts_with('-') {
+			leading_flags << args[i + 1]
+			i += 2
 		} else {
-			start += 1
+			i += 1
 		}
 	}
 
-	mut flags := []string{}
+	mut prefix := [args[0]]
+	if i < args.len && args[i] in subcommands {
+		prefix << args[i]
+		// `cache <path|clear>` is a sub-subcommand that stays anchored
+		// inside the prefix so reordered flags do not slip between the
+		// two tokens.
+		if args[i] == 'cache' && i + 1 < args.len && args[i + 1] in cache_subs {
+			prefix << args[i + 1]
+			i += 2
+		} else {
+			i += 1
+		}
+	}
+
+	mut flags := leading_flags.clone()
 	mut positionals := []string{}
-	mut i := start
 	for i < args.len {
 		t := args[i]
 		if t.starts_with('-') && t != '-' {
