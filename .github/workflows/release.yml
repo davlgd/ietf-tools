@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: linux
+            arch: x86_64
+            ext: ''
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+            ext: ''
+          - runner: macos-26
+            os: macos
+            arch: arm64
+            ext: ''
+          - runner: windows-latest
+            os: windows
+            arch: x86_64
+            ext: '.exe'
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-v
+
+      - name: Build and checksum (UNIX)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          OS: ${{ matrix.os }}
+          ARCH: ${{ matrix.arch }}
+        run: scripts/release.sh
+
+      - name: Build and checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: scripts\release.bat
+
+      - name: Upload binary and checksums to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/rfc-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+            bin/rfc-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}.sha256
+            bin/rfc-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}.sha512
