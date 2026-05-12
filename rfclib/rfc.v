@@ -89,6 +89,15 @@ pub fn parse_rfc_number(input string) !int {
 			value: input
 		}
 	}
+	// Reject inputs that silently overflowed `int.parse`: V's `string.int`
+	// clamps to `int_max` on overflow, which would turn `2147483648` into
+	// `2147483647`, producing a confusing "RFC 2147483647 not found"
+	// instead of "invalid RFC number".
+	if n.str() != digits {
+		return ErrInvalidNumber{
+			value: input
+		}
+	}
 	return n
 }
 

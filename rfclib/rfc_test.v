@@ -34,6 +34,18 @@ fn test_parse_rfc_number_rejects_invalid() {
 	}
 }
 
+fn test_parse_rfc_number_rejects_int_overflow() {
+	// V's `string.int` clamps to `int_max` on overflow, so a 10+ digit
+	// input that exceeds 2^31-1 would otherwise be silently truncated.
+	// Reject those rather than serve a confusing "RFC <other> not found".
+	overflowing := ['2147483648', '99999999999', 'RFC2147483648']
+	for input in overflowing {
+		if n := parse_rfc_number(input) {
+			assert false, 'accepted overflowing input ${input} -> ${n}'
+		}
+	}
+}
+
 fn test_metadata_url() {
 	assert metadata_url(8259) == 'https://www.rfc-editor.org/rfc/rfc8259.json'
 	assert metadata_url(1149) == 'https://www.rfc-editor.org/rfc/rfc1149.json'
