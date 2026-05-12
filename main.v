@@ -699,7 +699,10 @@ fn cmd_cache_clear(cmd Command) ! {
 
 fn print_info(r rfclib.Rfc) {
 	println('${r.doc_id} — ${r.title.trim_space()}')
-	println('  Authors:    ${r.authors.join(', ')}')
+	authors := r.authors.filter(it.trim_space() != '').join(', ')
+	if authors != '' {
+		println('  Authors:    ${authors}')
+	}
 	if pub_date := r.pub_date {
 		if pub_date != '' {
 			println('  Date:       ${pub_date}')
@@ -711,8 +714,9 @@ fn print_info(r rfclib.Rfc) {
 			println('  Pages:      ${page_count}')
 		}
 	}
-	if r.formats.len > 0 {
-		println('  Formats:    ${r.formats.join(', ')}')
+	formats := r.formats.filter(it.trim_space() != '').join(', ')
+	if formats != '' {
+		println('  Formats:    ${formats}')
 	}
 	if r.keywords.len > 0 {
 		println('  Keywords:   ${r.keywords.join(', ')}')
