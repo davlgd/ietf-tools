@@ -761,65 +761,61 @@ fn cmd_cache_clear(cmd Command) ! {
 
 fn print_info(r rfclib.Rfc) {
 	println('${r.doc_id} — ${r.title.trim_space()}')
-	authors := r.authors.filter(it.trim_space() != '').join(', ')
-	if authors != '' {
-		println('  Authors:    ${authors}')
-	}
-	if pub_date := r.pub_date {
-		if pub_date != '' {
-			println('  Date:       ${pub_date}')
+	print_field('Authors', r.authors.filter(it.trim_space() != '').join(', '))
+	print_field('Date', r.pub_date or { '' })
+	print_field('Status', r.status)
+	if pages := r.page_count {
+		if pages > 0 {
+			print_field('Pages', pages.str())
 		}
 	}
-	println('  Status:     ${r.status}')
-	if page_count := r.page_count {
-		if page_count > 0 {
-			println('  Pages:      ${page_count}')
-		}
-	}
-	formats := r.formats.filter(it.trim_space() != '').join(', ')
-	if formats != '' {
-		println('  Formats:    ${formats}')
-	}
-	if r.keywords.len > 0 {
-		println('  Keywords:   ${r.keywords.join(', ')}')
-	}
-	if r.obsoletes.len > 0 {
-		println('  Obsoletes:  ${r.obsoletes.join(', ')}')
-	}
-	if r.obsoleted_by.len > 0 {
-		println('  Obsoleted:  ${r.obsoleted_by.join(', ')}')
-	}
-	if r.updates.len > 0 {
-		println('  Updates:    ${r.updates.join(', ')}')
-	}
-	if r.updated_by.len > 0 {
-		println('  Updated by: ${r.updated_by.join(', ')}')
-	}
-	if r.see_also.len > 0 {
-		println('  See also:   ${r.see_also.join(', ')}')
-	}
-	if doi := r.doi {
-		if doi != '' {
-			println('  DOI:        ${doi}')
-		}
-	}
-	if errata := r.errata_url {
-		if errata != '' {
-			println('  Errata:     ${errata}')
-		}
-	}
+	print_field('Formats', r.formats.filter(it.trim_space() != '').join(', '))
+	print_list('Keywords', r.keywords)
+	print_list('Obsoletes', r.obsoletes)
+	print_list('Obsoleted', r.obsoleted_by)
+	print_list('Updates', r.updates)
+	print_list('Updated by', r.updated_by)
+	print_list('See also', r.see_also)
+	print_field('DOI', r.doi or { '' })
+	print_field('Errata', r.errata_url or { '' })
 	number := r.number()
 	if number > 0 {
-		println('  RFC Editor: ${rfclib.rfc_editor_info_url(number)}')
-		println('  Tracker:    ${rfclib.datatracker_url(number)}')
+		print_field('RFC Editor', rfclib.rfc_editor_info_url(number))
+		print_field('Tracker', rfclib.datatracker_url(number))
 	}
-	if abstract := r.abstract {
-		if abstract != '' {
-			println('')
-			println('Abstract:')
-			for line in abstract.split_into_lines() {
-				println('  ${line}')
-			}
+	abstract := r.abstract or { '' }
+	if abstract != '' {
+		println('')
+		println('Abstract:')
+		for line in abstract.split_into_lines() {
+			println('  ${line}')
 		}
 	}
 }
+
+// print_field prints "  <label>: <value>" with the label padded to a
+// width wide enough for every label `print_info` emits. Empty values
+// are silently skipped so callers don't need to guard each call.
+fn print_field(label string, value string) {
+	if value == '' {
+		return
+	}
+	pad := if label.len < info_label_width {
+		' '.repeat(info_label_width - label.len)
+	} else {
+		''
+	}
+	println('  ${label}:${pad}  ${value}')
+}
+
+// print_list is the list-valued companion of print_field: it joins the
+// items with ", " and delegates to print_field, so the empty-list case
+// is filtered uniformly.
+fn print_list(label string, items []string) {
+	print_field(label, items.join(', '))
+}
+
+// info_label_width tracks the longest label `print_info` emits
+// ("Updated by", 10 chars). Bumping a label past this width is caught at
+// review because the helper would no longer align it.
+const info_label_width = 10
