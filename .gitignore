@@ -19,3 +19,6 @@
 .cache-local/
 /rfcTools
 /rfc-index.xml
+
+# Agent/editor scratch state
+.claude/
