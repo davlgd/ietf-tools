@@ -56,6 +56,21 @@ fn test_reorder_args_handles_no_args() {
 	assert reorder_args(['rfc']) == ['rfc']
 }
 
+fn test_looks_like_rfc_number_accepts_digit_and_prefixed_forms() {
+	assert looks_like_rfc_number('8259')
+	assert looks_like_rfc_number('rfc-8259')
+	assert looks_like_rfc_number('RFC 8259')
+	assert looks_like_rfc_number(' 8259')
+}
+
+fn test_looks_like_rfc_number_rejects_words() {
+	// A typo'd subcommand must not slip past as a "candidate number".
+	assert !looks_like_rfc_number('info')
+	assert !looks_like_rfc_number('seach')
+	assert !looks_like_rfc_number('')
+	assert !looks_like_rfc_number('-1')
+}
+
 fn test_reorder_args_handles_flags_before_and_after_subcommand() {
 	// Mixed placement: `--offline` precedes the subcommand, `--print`
 	// follows the positional. Both must end up between the subcommand

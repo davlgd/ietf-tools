@@ -329,6 +329,22 @@ fn make_client(cmd Command) !rfclib.Client {
 	return rfclib.new_client_with(cache, offline)
 }
 
+// looks_like_rfc_number returns true when `input` plausibly denotes an
+// RFC number — pure digits, or one of the textual prefixes accepted by
+// `parse_rfc_number` (`RFC`, `rfc `, `rfc-`). The point is to tell apart
+// "user typed an RFC reference but malformed it" from "user typed a word
+// that was almost certainly a misspelled subcommand".
+fn looks_like_rfc_number(input string) bool {
+	s := input.trim_space()
+	if s == '' {
+		return false
+	}
+	if s[0] >= `0` && s[0] <= `9` {
+		return true
+	}
+	return s.to_lower().starts_with('rfc')
+}
+
 fn open_cache(cmd Command) !rfclib.Cache {
 	dir := cmd.flags.get_string('cache-dir') or { '' }
 	if dir == '' {
@@ -341,6 +357,14 @@ fn cmd_get(cmd Command) ! {
 	if cmd.args.len == 0 {
 		cmd.execute_help()
 		return
+	}
+	// The root command only fires when no subcommand matched, so an arg
+	// that bears no resemblance to an RFC reference is almost certainly
+	// a typo'd subcommand. Surface that explicitly rather than report a
+	// confusing "invalid RFC number" for words that the user never
+	// intended as a number.
+	if !looks_like_rfc_number(cmd.args[0]) {
+		die('unknown command: ${cmd.args[0]} (try `rfc --help`)')
 	}
 	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	format_str := cmd.flags.get_string('format') or { 'text' }

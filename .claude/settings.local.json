@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(v test *)",
+      "Bash(rm -rf ~/.cache/ietf-tools/*)",
+      "Bash(v -prod -o rfc .)",
+      "Bash(./rfc info *)",
+      "Bash(./rfc 9000 -f pdf)",
+      "Read(//private/tmp/**)",
+      "Bash(./rfc xref *)",
+      "Bash(./rfc 8259 --offline -f text)",
+      "Bash(./rfc --offline info 8259)",
+      "Bash(./rfc search *)",
+      "Bash(./rfc iana *)",
+      "Bash(./rfc bortzmeyer *)"
+    ]
+  }
+}
