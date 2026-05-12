@@ -55,3 +55,18 @@ pub:
 pub fn (e ErrUpstream) msg() string {
 	return 'upstream ${e.url} returned HTTP ${e.status}'
 }
+
+// ErrOffline is returned when the client is in offline mode (`--offline`)
+// and the requested URL is not in the cache. Distinguishing it from
+// `ErrNotFound` matters at the CLI surface: the user should not see "RFC
+// 7000 not found" when the document simply has not been fetched yet.
+pub struct ErrOffline {
+	Error
+pub:
+	url string
+}
+
+// msg renders ErrOffline for printing.
+pub fn (e ErrOffline) msg() string {
+	return 'offline mode and ${e.url} is not cached'
+}

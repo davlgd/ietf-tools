@@ -25,12 +25,14 @@ fn test_fetch_returns_cached_body() {
 	assert got == 'cached body'
 }
 
-fn test_offline_mode_misses_become_not_found() {
+fn test_offline_mode_misses_return_err_offline() {
 	c := make_test_client(true)
 	if _ := c.fetch('https://www.rfc-editor.org/rfc/rfc99999.txt') {
 		assert false, 'offline mode must not perform network calls'
 	} else {
-		assert err is ErrNotFound
+		// ErrOffline is distinct from ErrNotFound so the CLI can tell
+		// "uncached in offline mode" apart from "upstream 404".
+		assert err is ErrOffline
 	}
 }
 

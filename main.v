@@ -253,6 +253,36 @@ fn reorder_args(args []string) []string {
 	return out
 }
 
+// die prints a friendly, prefixed error message on stderr and exits the
+// process with status 1. It is the single channel for user-visible errors:
+// using `return error(...)` from a subcommand callback routes through V's
+// `cli` module which prefixes the message with the noisy "cli execution
+// error:" banner, so subcommands prefer this helper instead.
+@[noreturn]
+fn die(msg string) {
+	eprintln('rfc: ${msg}')
+	exit(1)
+}
+
+// die_on_err formats an rfclib error into a self-contained message and
+// exits. `not_found_label` is the human-friendly identifier the caller
+// wants surfaced when the network layer's `ErrNotFound` carries a raw
+// URL; rfclib lookups that already produced a descriptive resource
+// label (e.g. iana's "<code> in <registry>") keep their own wording.
+@[noreturn]
+fn die_on_err(err IError, not_found_label string) {
+	if err is rfclib.ErrNotFound {
+		if err.resource.contains('://') {
+			die('${not_found_label} not found')
+		}
+		die('${err.resource} not found')
+	}
+	if err is rfclib.ErrOffline {
+		die('${not_found_label} is not cached (offline mode)')
+	}
+	die(err.msg())
+}
+
 // add_output_format_flag attaches the `-f/--format` flag (text|json) used by
 // every subcommand that renders structured data — info, search, latest. The
 // helper keeps the description and default value identical across commands
@@ -288,32 +318,36 @@ fn cmd_get(cmd Command) ! {
 		cmd.execute_help()
 		return
 	}
-	number := rfclib.parse_rfc_number(cmd.args[0])!
+	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	format_str := cmd.flags.get_string('format') or { 'text' }
-	format := rfclib.parse_format(format_str)!
+	format := rfclib.parse_format(format_str) or { die(err.msg()) }
 	// Refuse to dump binary PDF straight into an interactive terminal: the
 	// resulting noise scrambles the user's session. They can still pipe or
 	// redirect, in which case stdout is not a TTY and the body flows.
 	if format == .pdf && os.is_atty(1) != 0 {
-		return error('refusing to write PDF to a terminal; redirect (e.g. > rfc${number}.pdf) or pipe to a viewer')
+		die('refusing to write PDF to a terminal; redirect (e.g. > rfc${number}.pdf) or pipe to a viewer')
 	}
-	client := make_client(cmd)!
-	body := client.fetch_format(number, format)!
+	client := make_client(cmd) or { die(err.msg()) }
+	body := client.fetch_format(number, format) or { die_on_err(err, 'RFC ${number} (${format})') }
 	// Use `print` rather than `println`: keeps PDF/XML byte-exact and avoids a
 	// stray newline on text/html where the RFC payload already ends in one.
 	print(body)
 }
 
 fn cmd_info(cmd Command) ! {
-	number := rfclib.parse_rfc_number(cmd.args[0])!
+	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
-	client := make_client(cmd)!
-	rfc := if refresh { client.refresh_metadata(number)! } else { client.fetch_metadata(number)! }
+	client := make_client(cmd) or { die(err.msg()) }
+	rfc := if refresh {
+		client.refresh_metadata(number) or { die_on_err(err, 'RFC ${number}') }
+	} else {
+		client.fetch_metadata(number) or { die_on_err(err, 'RFC ${number}') }
+	}
 	match format.to_lower().trim_space() {
 		'text' { print_info(rfc) }
 		'json' { println(json2.encode(rfc, prettify: true)) }
-		else { return error('unknown format: ${format} (expected: text, json)') }
+		else { die('unknown format: ${format} (expected: text, json)') }
 	}
 }
 
@@ -339,14 +373,18 @@ fn rfc_link(number int) string {
 fn cmd_track(cmd Command) ! {
 	name := cmd.args[0].trim_space()
 	if name == '' || name.contains(' ') {
-		return error('invalid draft name: ${cmd.args[0]} (expected fully-qualified, e.g. draft-ietf-quic-transport)')
+		die('invalid draft name: ${cmd.args[0]} (expected fully-qualified, e.g. draft-ietf-quic-transport)')
 	}
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
-	client := make_client(cmd)!
-	draft := if refresh { client.refresh_draft(name)! } else { client.fetch_draft(name)! }
-	state_index := client.fetch_states_index()!
+	client := make_client(cmd) or { die(err.msg()) }
+	draft := if refresh {
+		client.refresh_draft(name) or { die_on_err(err, 'draft ${name}') }
+	} else {
+		client.fetch_draft(name) or { die_on_err(err, 'draft ${name}') }
+	}
+	state_index := client.fetch_states_index() or { die(err.msg()) }
 	states := rfclib.resolve_states(draft, state_index)
 
 	match format.to_lower().trim_space() {
@@ -362,7 +400,7 @@ fn cmd_track(cmd Command) ! {
 			))
 		}
 		else {
-			return error('unknown format: ${format} (expected: text, json)')
+			die('unknown format: ${format} (expected: text, json)')
 		}
 	}
 }
@@ -408,16 +446,20 @@ fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
 }
 
 fn cmd_xref(cmd Command) ! {
-	number := rfclib.parse_rfc_number(cmd.args[0])!
+	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
-	client := make_client(cmd)!
-	xr := if refresh { client.refresh_xref(number)! } else { client.fetch_xref(number)! }
+	client := make_client(cmd) or { die(err.msg()) }
+	xr := if refresh {
+		client.refresh_xref(number) or { die_on_err(err, 'RFC ${number}') }
+	} else {
+		client.fetch_xref(number) or { die_on_err(err, 'RFC ${number}') }
+	}
 
 	match format.to_lower().trim_space() {
 		'text' { print_xref(xr) }
 		'json' { println(json2.encode(xr, prettify: true)) }
-		else { return error('unknown format: ${format} (expected: text, json)') }
+		else { die('unknown format: ${format} (expected: text, json)') }
 	}
 }
 
@@ -450,22 +492,21 @@ fn print_xref_section(label string, entries []rfclib.XrefEntry) {
 }
 
 fn cmd_errata(cmd Command) ! {
-	number := rfclib.parse_rfc_number(cmd.args[0])!
+	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
-	client := make_client(cmd)!
+	client := make_client(cmd) or { die(err.msg()) }
 	errata := if refresh {
-		client.refresh_errata_for(number)!
+		client.refresh_errata_for(number) or { die_on_err(err, 'errata for RFC ${number}') }
 	} else {
-		client.errata_for(number)!
+		client.errata_for(number) or { die_on_err(err, 'errata for RFC ${number}') }
 	}
 
 	match format.to_lower().trim_space() {
 		'text' {
 			if errata.len == 0 {
-				eprintln('rfc: no errata reported for RFC ${number}')
-				exit(1)
+				die('no errata reported for RFC ${number}')
 			}
 			for e in errata {
 				section := e.section or { '' }
@@ -477,7 +518,7 @@ fn cmd_errata(cmd Command) ! {
 			println(json2.encode(errata, prettify: true))
 		}
 		else {
-			return error('unknown format: ${format} (expected: text, json)')
+			die('unknown format: ${format} (expected: text, json)')
 		}
 	}
 }
@@ -485,7 +526,9 @@ fn cmd_errata(cmd Command) ! {
 fn cmd_search(cmd Command) ! {
 	// Empty args are filtered upstream by `required_args: 1`, which makes
 	// cli's parser exit before calling us; no defensive check needed here.
-	status := rfclib.normalize_std_level(cmd.flags.get_string('status') or { '' })!
+	status := rfclib.normalize_std_level(cmd.flags.get_string('status') or { '' }) or {
+		die(err.msg())
+	}
 	limit := cmd.flags.get_int('limit') or { 20 }
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
@@ -495,14 +538,17 @@ fn cmd_search(cmd Command) ! {
 		std_level:    status
 		limit:        limit
 	}
-	client := make_client(cmd)!
-	hits := if refresh { client.search_fresh(query)! } else { client.search(query)! }
+	client := make_client(cmd) or { die(err.msg()) }
+	hits := if refresh {
+		client.search_fresh(query) or { die(err.msg()) }
+	} else {
+		client.search(query) or { die(err.msg()) }
+	}
 
 	match format.to_lower().trim_space() {
 		'text' {
 			if hits.len == 0 {
-				eprintln('rfc: no match')
-				exit(1)
+				die('no match')
 			}
 			for h in hits {
 				slug := h.std_level_short()
@@ -516,7 +562,7 @@ fn cmd_search(cmd Command) ! {
 			println(json2.encode(hits, prettify: true))
 		}
 		else {
-			return error('unknown format: ${format} (expected: text, json)')
+			die('unknown format: ${format} (expected: text, json)')
 		}
 	}
 }
@@ -525,25 +571,25 @@ fn cmd_iana(cmd Command) ! {
 	registry := cmd.args[0].trim_space()
 	code := cmd.args[1].trim_space()
 	if registry == '' || registry.contains(' ') || registry.contains('/') {
-		return error('invalid registry slug: ${cmd.args[0]}')
+		die('invalid registry slug: ${cmd.args[0]}')
 	}
 	if code == '' {
-		return error('empty code')
+		die('empty code')
 	}
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
-	client := make_client(cmd)!
+	client := make_client(cmd) or { die(err.msg()) }
 	rec := if refresh {
-		client.refresh_iana(registry, code)!
+		client.refresh_iana(registry, code) or { die_on_err(err, '${registry} registry') }
 	} else {
-		client.fetch_iana(registry, code)!
+		client.fetch_iana(registry, code) or { die_on_err(err, '${registry} registry') }
 	}
 
 	match format.to_lower().trim_space() {
 		'text' { print_iana(registry, rec) }
 		'json' { println(json2.encode(rec, prettify: true)) }
-		else { return error('unknown format: ${format} (expected: text, json)') }
+		else { die('unknown format: ${format} (expected: text, json)') }
 	}
 }
 
@@ -571,12 +617,12 @@ fn print_iana(registry string, rec rfclib.IanaRecord) {
 fn cmd_latest(cmd Command) ! {
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
-	client := make_client(cmd)!
+	client := make_client(cmd) or { die(err.msg()) }
 
 	entries := if refresh {
-		client.refresh_latest()!
+		client.refresh_latest() or { die(err.msg()) }
 	} else {
-		client.fetch_latest()!
+		client.fetch_latest() or { die(err.msg()) }
 	}
 
 	match format.to_lower().trim_space() {
@@ -589,20 +635,20 @@ fn cmd_latest(cmd Command) ! {
 			println(json2.encode(entries, prettify: true))
 		}
 		else {
-			return error('unknown format: ${format} (expected: text, json)')
+			die('unknown format: ${format} (expected: text, json)')
 		}
 	}
 }
 
 fn cmd_bortzmeyer(cmd Command) ! {
-	number := rfclib.parse_rfc_number(cmd.args[0])!
+	number := rfclib.parse_rfc_number(cmd.args[0]) or { die(err.msg()) }
 	url := rfclib.bortzmeyer_url(number)
 	print_only := cmd.flags.get_bool('print') or { false }
 
-	client := make_client(cmd)!
-	if !client.bortzmeyer_exists(number)! {
-		eprintln('rfc: no Bortzmeyer article for RFC ${number} (${url})')
-		exit(1)
+	client := make_client(cmd) or { die(err.msg()) }
+	exists := client.bortzmeyer_exists(number) or { die(err.msg()) }
+	if !exists {
+		die('no Bortzmeyer article for RFC ${number} (${url})')
 	}
 	if print_only {
 		println(url)
@@ -611,7 +657,7 @@ fn cmd_bortzmeyer(cmd Command) ! {
 	// Status message goes to stderr so stdout stays empty for callers piping
 	// the command into a script.
 	eprintln('Opening ${url}')
-	os.open_uri(url)!
+	os.open_uri(url) or { die(err.msg()) }
 }
 
 // cmd_cache fires when the user runs `rfc cache` without a subcommand or
@@ -628,13 +674,13 @@ fn cmd_cache(cmd Command) ! {
 }
 
 fn cmd_cache_path(cmd Command) ! {
-	cache := open_cache(cmd)!
+	cache := open_cache(cmd) or { die(err.msg()) }
 	println(cache.root)
 }
 
 fn cmd_cache_clear(cmd Command) ! {
-	cache := open_cache(cmd)!
-	removed := cache.clear()!
+	cache := open_cache(cmd) or { die(err.msg()) }
+	removed := cache.clear() or { die(err.msg()) }
 	noun := if removed == 1 { 'entry' } else { 'entries' }
 	println('removed ${removed} cache ${noun}')
 }

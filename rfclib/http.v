@@ -64,8 +64,8 @@ pub fn (c Client) fetch(url string) !string {
 		return cached
 	}
 	if c.offline {
-		return ErrNotFound{
-			resource: url
+		return ErrOffline{
+			url: url
 		}
 	}
 	return c.network_get(url)!
