@@ -78,34 +78,24 @@ pub fn build_xref(rfc Rfc, cache map[int]Rfc) Xref {
 	}
 }
 
-// fetch_xref returns the cross-reference graph of an RFC. The main
-// document and every referenced RFC go through the cache, so a follow-up
-// call (or an `info` after an `xref`) is served entirely from disk.
-// Non-RFC references (STD, BCP) are passed through unresolved; resolution
-// failures on individual RFCs degrade gracefully to a bare `doc_id` entry
-// so a single missing metadata file does not poison the whole graph.
-pub fn (c Client) fetch_xref(number int) !Xref {
-	return c.fetch_xref_with(number, false)!
-}
-
-// refresh_xref is `fetch_xref` with the cache bypassed for both the main
-// RFC and every referenced metadata document.
-pub fn (c Client) refresh_xref(number int) !Xref {
-	return c.fetch_xref_with(number, true)!
-}
-
-fn (c Client) fetch_xref_with(number int, refresh bool) !Xref {
-	rfc := if refresh { c.refresh_metadata(number)! } else { c.fetch_metadata(number)! }
+// xref returns the cross-reference graph of an RFC. The main document
+// and every referenced RFC go through the cache by default, so a
+// follow-up call (or an `info` after an `xref`) is served entirely from
+// disk. Pass `refresh: true` to bypass the cache for the main RFC and
+// every referenced metadata document.
+// Non-RFC references (STD, BCP) are passed through unresolved;
+// resolution failures on individual RFCs degrade gracefully to a bare
+// `doc_id` entry so a single missing metadata file does not poison the
+// whole graph.
+pub fn (c Client) xref(number int, opts FetchOpts) !Xref {
+	rfc := c.metadata(number, opts)!
 	mut cache := map[int]Rfc{}
 	groups := [rfc.obsoletes, rfc.obsoleted_by, rfc.updates, rfc.updated_by, rfc.see_also]
 	for refs in groups {
 		for id in refs {
 			n := parse_doc_id_number(id)
 			if n > 0 && n !in cache {
-				r := if refresh { c.refresh_metadata(n) or { continue } } else { c.fetch_metadata(n) or {
-						continue
-					} }
-				cache[n] = r
+				cache[n] = c.metadata(n, opts) or { continue }
 			}
 		}
 	}

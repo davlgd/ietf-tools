@@ -47,18 +47,12 @@ pub fn parse_errata(body string) ![]Erratum {
 	return json2.decode[[]Erratum](body)!
 }
 
-// errata_for returns every erratum reported against `number`, fetching the
-// global catalogue through the cache and filtering locally. Results are
-// returned in the order published upstream (which is errata_id ascending).
-pub fn (c Client) errata_for(number int) ![]Erratum {
-	body := c.fetch(errata_url)!
-	return filter_errata(parse_errata(body)!, number)
-}
-
-// refresh_errata_for redownloads the global catalogue (overwriting the
-// cached copy) before filtering. Use it when the cache is suspected stale.
-pub fn (c Client) refresh_errata_for(number int) ![]Erratum {
-	body := c.fetch_fresh(errata_url)!
+// errata_for returns every erratum reported against `number`, fetching
+// the global catalogue (cache-first by default) and filtering locally.
+// Pass `refresh: true` to redownload the catalogue. Results are returned
+// in the order published upstream (errata_id ascending).
+pub fn (c Client) errata_for(number int, opts FetchOpts) ![]Erratum {
+	body := c.fetch_with(errata_url, opts)!
 	return filter_errata(parse_errata(body)!, number)
 }
 

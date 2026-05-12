@@ -45,23 +45,14 @@ pub fn iana_url(registry string) string {
 	return '${iana_base}/${registry}/${registry}.xml'
 }
 
-// fetch_iana fetches the XML view of `registry` (cached) and returns the
-// first record matching `code`. Matching is case-insensitive against any
-// named child of the record (typically `<value>`, `<name>`, or `<number>`),
-// and an integer `code` also matches numeric ranges such as `<value>105-199</value>`.
-// `ErrNotFound` is returned when no record matches.
-pub fn (c Client) fetch_iana(registry string, code string) !IanaRecord {
-	body := c.fetch(iana_url(registry))!
-	return find_iana_record(body, code) or {
-		return ErrNotFound{
-			resource: '${code} in ${registry}'
-		}
-	}
-}
-
-// refresh_iana is `fetch_iana` with the cache bypassed.
-pub fn (c Client) refresh_iana(registry string, code string) !IanaRecord {
-	body := c.fetch_fresh(iana_url(registry))!
+// iana fetches the XML view of `registry` and returns the first record
+// matching `code`. Matching is case-insensitive against any named child
+// of the record (typically `<value>`, `<name>`, or `<number>`), and an
+// integer `code` also matches numeric ranges such as `<value>105-199</value>`.
+// The lookup is cache-first; pass `refresh: true` to redownload the
+// registry. `ErrNotFound` is returned when no record matches.
+pub fn (c Client) iana(registry string, code string, opts FetchOpts) !IanaRecord {
+	body := c.fetch_with(iana_url(registry), opts)!
 	return find_iana_record(body, code) or {
 		return ErrNotFound{
 			resource: '${code} in ${registry}'

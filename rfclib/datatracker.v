@@ -152,21 +152,13 @@ pub fn parse_search_response(body string) ![]DatatrackerHit {
 	return hits
 }
 
-// search runs `q` against the IETF Datatracker, post-filters the results so
-// every title token matches (case-insensitive AND), and returns at most
-// `q.limit` hits. The query URL goes through the normal cache.
-pub fn (c Client) search(q SearchQuery) ![]DatatrackerHit {
+// search runs `q` against the IETF Datatracker, post-filters the results
+// so every title token matches (case-insensitive AND), and returns at
+// most `q.limit` hits. By default the query goes through the cache;
+// pass `refresh: true` to re-query Datatracker.
+pub fn (c Client) search(q SearchQuery, opts FetchOpts) ![]DatatrackerHit {
 	url := build_search_url(q)!
-	body := c.fetch(url)!
-	hits := parse_search_response(body)!
-	return filter_and_limit(hits, q.title_tokens, q.limit)
-}
-
-// search_fresh is `search` with the cache bypassed; useful when a query was
-// previously cached but the user wants the current state.
-pub fn (c Client) search_fresh(q SearchQuery) ![]DatatrackerHit {
-	url := build_search_url(q)!
-	body := c.fetch_fresh(url)!
+	body := c.fetch_with(url, opts)!
 	hits := parse_search_response(body)!
 	return filter_and_limit(hits, q.title_tokens, q.limit)
 }

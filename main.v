@@ -388,7 +388,7 @@ fn cmd_get(cmd Command) ! {
 		die('refusing to write PDF to a terminal; redirect (e.g. > rfc${number}.pdf) or pipe to a viewer')
 	}
 	client := make_client(cmd) or { die(err.msg()) }
-	body := client.fetch_format(number, format) or { die_on_err(err, 'RFC ${number} (${format})') }
+	body := client.document(number, format) or { die_on_err(err, 'RFC ${number} (${format})') }
 	// Use `print` rather than `println`: keeps PDF/XML byte-exact and avoids a
 	// stray newline on text/html where the RFC payload already ends in one.
 	print(body)
@@ -399,11 +399,7 @@ fn cmd_info(cmd Command) ! {
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 	client := make_client(cmd) or { die(err.msg()) }
-	rfc := if refresh {
-		client.refresh_metadata(number) or { die_on_err(err, 'RFC ${number}') }
-	} else {
-		client.fetch_metadata(number) or { die_on_err(err, 'RFC ${number}') }
-	}
+	rfc := client.metadata(number, refresh: refresh) or { die_on_err(err, 'RFC ${number}') }
 	render(format, rfc, print_info)
 }
 
@@ -435,12 +431,8 @@ fn cmd_track(cmd Command) ! {
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
 	client := make_client(cmd) or { die(err.msg()) }
-	draft := if refresh {
-		client.refresh_draft(name) or { die_on_err(err, 'draft ${name}') }
-	} else {
-		client.fetch_draft(name) or { die_on_err(err, 'draft ${name}') }
-	}
-	state_index := client.fetch_states_index() or { die_on_err(err, 'Datatracker state catalogue') }
+	draft := client.draft(name, refresh: refresh) or { die_on_err(err, 'draft ${name}') }
+	state_index := client.states_index() or { die_on_err(err, 'Datatracker state catalogue') }
 	states := rfclib.resolve_states(draft, state_index)
 
 	render(format, TrackOutput{
@@ -504,11 +496,7 @@ fn cmd_xref(cmd Command) ! {
 	format := cmd.flags.get_string('format') or { 'text' }
 	refresh := cmd.flags.get_bool('refresh') or { false }
 	client := make_client(cmd) or { die(err.msg()) }
-	xr := if refresh {
-		client.refresh_xref(number) or { die_on_err(err, 'RFC ${number}') }
-	} else {
-		client.fetch_xref(number) or { die_on_err(err, 'RFC ${number}') }
-	}
+	xr := client.xref(number, refresh: refresh) or { die_on_err(err, 'RFC ${number}') }
 	render(format, xr, print_xref)
 }
 
@@ -546,10 +534,8 @@ fn cmd_errata(cmd Command) ! {
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
 	client := make_client(cmd) or { die(err.msg()) }
-	errata := if refresh {
-		client.refresh_errata_for(number) or { die_on_err(err, 'errata for RFC ${number}') }
-	} else {
-		client.errata_for(number) or { die_on_err(err, 'errata for RFC ${number}') }
+	errata := client.errata_for(number, refresh: refresh) or {
+		die_on_err(err, 'errata for RFC ${number}')
 	}
 	if errata.len == 0 && format.to_lower().trim_space() == 'text' {
 		die('no errata reported for RFC ${number}')
@@ -585,11 +571,7 @@ fn cmd_search(cmd Command) ! {
 		limit:        limit
 	}
 	client := make_client(cmd) or { die(err.msg()) }
-	hits := if refresh {
-		client.search_fresh(query) or { die_on_err(err, 'Datatracker search') }
-	} else {
-		client.search(query) or { die_on_err(err, 'Datatracker search') }
-	}
+	hits := client.search(query, refresh: refresh) or { die_on_err(err, 'Datatracker search') }
 	if hits.len == 0 && format.to_lower().trim_space() == 'text' {
 		die('no match')
 	}
@@ -619,10 +601,8 @@ fn cmd_iana(cmd Command) ! {
 	refresh := cmd.flags.get_bool('refresh') or { false }
 
 	client := make_client(cmd) or { die(err.msg()) }
-	rec := if refresh {
-		client.refresh_iana(registry, code) or { die_on_err(err, '${registry} registry') }
-	} else {
-		client.fetch_iana(registry, code) or { die_on_err(err, '${registry} registry') }
+	rec := client.iana(registry, code, refresh: refresh) or {
+		die_on_err(err, '${registry} registry')
 	}
 	render(format, rec, fn [registry] (r rfclib.IanaRecord) {
 		print_iana(registry, r)
@@ -655,11 +635,7 @@ fn cmd_latest(cmd Command) ! {
 	refresh := cmd.flags.get_bool('refresh') or { false }
 	client := make_client(cmd) or { die(err.msg()) }
 
-	entries := if refresh {
-		client.refresh_latest() or { die_on_err(err, 'RFC Editor feed') }
-	} else {
-		client.fetch_latest() or { die_on_err(err, 'RFC Editor feed') }
-	}
+	entries := client.latest(refresh: refresh) or { die_on_err(err, 'RFC Editor feed') }
 	render(format, entries, print_latest)
 }
 

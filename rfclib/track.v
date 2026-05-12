@@ -116,28 +116,22 @@ pub fn resolve_states(draft Draft, index map[string]DraftState) []DraftState {
 	return out
 }
 
-// fetch_draft returns the Datatracker document for a draft `name`, going
-// through the rfclib cache. Use a fully-qualified name such as
-// `draft-ietf-quic-transport` (no revision suffix).
-pub fn (c Client) fetch_draft(name string) !Draft {
+// draft returns the Datatracker document for a draft `name`. Use a
+// fully-qualified name such as `draft-ietf-quic-transport` (no revision
+// suffix). The lookup is cache-first; pass `refresh: true` to bypass
+// the cache.
+pub fn (c Client) draft(name string, opts FetchOpts) !Draft {
 	url := '${datatracker_base}/api/v1/doc/document/${name}/'
-	body := c.fetch(url)!
+	body := c.fetch_with(url, opts)!
 	return parse_draft(body)!
 }
 
-// refresh_draft is `fetch_draft` with the cache bypassed.
-pub fn (c Client) refresh_draft(name string) !Draft {
-	url := '${datatracker_base}/api/v1/doc/document/${name}/'
-	body := c.fetch_fresh(url)!
-	return parse_draft(body)!
-}
-
-// fetch_states_index returns the global state catalogue used to resolve a
+// states_index returns the global state catalogue used to resolve a
 // draft's state URIs to human-readable names. The catalogue is small
 // (~60 KB, ~180 entries) and rarely changes; a single cached copy serves
 // every `track` invocation across the user's session.
-pub fn (c Client) fetch_states_index() !map[string]DraftState {
+pub fn (c Client) states_index(opts FetchOpts) !map[string]DraftState {
 	url := '${datatracker_base}/api/v1/doc/state/?limit=500&format=json'
-	body := c.fetch(url)!
+	body := c.fetch_with(url, opts)!
 	return parse_states_index(body)!
 }

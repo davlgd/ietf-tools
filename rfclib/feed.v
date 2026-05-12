@@ -85,17 +85,10 @@ fn split_feed_title(s string) (int, string) {
 	return digits.int(), rest[colon + 2..]
 }
 
-// fetch_latest returns the parsed feed using the cache; subsequent calls
-// within the same session will be served from disk.
-pub fn (c Client) fetch_latest() ![]FeedEntry {
-	body := c.fetch(rfc_editor_feed_url)!
-	return parse_feed(body)!
-}
-
-// refresh_latest forces a network round-trip and overwrites the cached feed
-// copy. Use this when you specifically want the freshest view (the feed is
-// the only resource in rfclib that a stale cache can mislead).
-pub fn (c Client) refresh_latest() ![]FeedEntry {
-	body := c.fetch_fresh(rfc_editor_feed_url)!
+// latest returns the parsed feed. By default the cache is consulted
+// first; pass `refresh: true` to force a network round-trip, which is
+// the only resource in rfclib that a stale cache can usefully mislead.
+pub fn (c Client) latest(opts FetchOpts) ![]FeedEntry {
+	body := c.fetch_with(rfc_editor_feed_url, opts)!
 	return parse_feed(body)!
 }

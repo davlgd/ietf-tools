@@ -83,6 +83,14 @@ pub fn (c Client) fetch_fresh(url string) !string {
 	return c.network_get(url)!
 }
 
+// fetch_with dispatches between `fetch` and `fetch_fresh` based on
+// `opts.refresh`. It is the single place every typed lookup
+// (metadata, errata, draft, …) routes through, so the cache-bypass
+// semantics stay uniform.
+pub fn (c Client) fetch_with(url string, opts FetchOpts) !string {
+	return if opts.refresh { c.fetch_fresh(url)! } else { c.fetch(url)! }
+}
+
 // network_get performs a GET, writes the response to the cache on success,
 // and translates HTTP status codes into rfclib's typed error vocabulary.
 fn (c Client) network_get(url string) !string {

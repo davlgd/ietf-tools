@@ -165,21 +165,16 @@ pub fn parse_metadata(body string) !Rfc {
 	return json2.decode[Rfc](body)!
 }
 
-// fetch_format returns the body of an RFC in the requested format. The cache
-// stores each format under its own key (the URL differs by extension).
-pub fn (c Client) fetch_format(number int, f Format) !string {
-	return c.fetch(format_url(number, f))!
+// document returns the body of an RFC in the requested format. The
+// cache stores each format under its own key (the URL differs by
+// extension). Pass `refresh: true` to bypass the cache.
+pub fn (c Client) document(number int, f Format, opts FetchOpts) !string {
+	return c.fetch_with(format_url(number, f), opts)!
 }
 
-// fetch_metadata returns the typed metadata for an RFC, going through the
-// rfclib cache.
-pub fn (c Client) fetch_metadata(number int) !Rfc {
-	body := c.fetch(metadata_url(number))!
-	return parse_metadata(body)!
-}
-
-// refresh_metadata is `fetch_metadata` with the cache bypassed.
-pub fn (c Client) refresh_metadata(number int) !Rfc {
-	body := c.fetch_fresh(metadata_url(number))!
+// metadata returns the typed metadata for an RFC. By default the cache
+// is consulted first; pass `refresh: true` to force a network round-trip.
+pub fn (c Client) metadata(number int, opts FetchOpts) !Rfc {
+	body := c.fetch_with(metadata_url(number), opts)!
 	return parse_metadata(body)!
 }

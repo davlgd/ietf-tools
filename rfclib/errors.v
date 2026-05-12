@@ -16,6 +16,17 @@ pub const version = '0.1.0'
 // (project name + version + contact URL).
 pub const user_agent = 'ietf-tools/${version} (+https://github.com/davlgd/ietf-tools)'
 
+// FetchOpts is the shared option bag every Client lookup accepts as a
+// trailing named-args parameter. `refresh: true` bypasses the cache and
+// forces a network round-trip; `refresh: false` (the default) is
+// cache-first. The struct deliberately has only one field today so the
+// `client.metadata(8259, refresh: true)` call site reads naturally.
+@[params]
+pub struct FetchOpts {
+pub:
+	refresh bool
+}
+
 // ErrInvalidNumber is returned when a value cannot be parsed as a positive RFC
 // or draft revision number.
 pub struct ErrInvalidNumber {

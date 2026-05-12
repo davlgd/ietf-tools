@@ -36,18 +36,18 @@ fn test_offline_mode_misses_return_err_offline() {
 	}
 }
 
-fn test_fetch_metadata_decodes_typed_view() {
+fn test_metadata_decodes_typed_view() {
 	c := make_test_client(false)
 	body := http_fixture('rfc8259.json')
 	c.cache.put(metadata_url(8259), body) or { panic(err) }
-	rfc := c.fetch_metadata(8259) or { panic(err) }
+	rfc := c.metadata(8259) or { panic(err) }
 	assert rfc.number() == 8259
 	assert rfc.status == 'INTERNET STANDARD'
 }
 
-fn test_fetch_format_returns_cached_payload() {
+fn test_document_returns_cached_payload() {
 	c := make_test_client(false)
 	c.cache.put(format_url(8259, .text), 'RFC 8259 plaintext fixture') or { panic(err) }
-	body := c.fetch_format(8259, .text) or { panic(err) }
+	body := c.document(8259, .text) or { panic(err) }
 	assert body.starts_with('RFC 8259')
 }
