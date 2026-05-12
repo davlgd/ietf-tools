@@ -51,54 +51,54 @@ pub fn (r Rfc) number() int {
 	return r.doc_id.trim_string_left('RFC').int()
 }
 
-// parse_rfc_number turns user input into a positive RFC number. It accepts
-// the common surface forms users actually type:
+// parse_rfc_number turns user input into a positive RFC number. It
+// accepts the common surface forms users actually type:
 //
 //   "8259"       -> 8259
 //   "RFC8259"    -> 8259
 //   "rfc 8259"   -> 8259
 //   "rfc-8259"   -> 8259
 //
-// Leading zeros, negative values, or trailing junk are rejected with
-// ErrInvalidNumber so that we never silently accept malformed input.
+// Leading zeros, negative values, overflowing or trailing-junk inputs
+// are rejected with `ErrInvalidNumber` so we never silently accept
+// malformed input.
 pub fn parse_rfc_number(input string) !int {
 	mut digits := input.to_lower().trim_space()
 	if digits.starts_with('rfc') {
 		digits = digits[3..].trim_left('- ')
 	}
-	if digits.len == 0 {
-		return ErrInvalidNumber{
-			value: input
-		}
+	fail := ErrInvalidNumber{
+		value: input
 	}
-	for c in digits {
-		if c < `0` || c > `9` {
-			return ErrInvalidNumber{
-				value: input
-			}
-		}
-	}
-	if digits.len > 1 && digits[0] == `0` {
-		return ErrInvalidNumber{
-			value: input
-		}
+	if !is_positive_decimal(digits) {
+		return fail
 	}
 	n := digits.int()
-	if n <= 0 {
-		return ErrInvalidNumber{
-			value: input
-		}
-	}
-	// Reject inputs that silently overflowed `int.parse`: V's `string.int`
-	// clamps to `int_max` on overflow, which would turn `2147483648` into
-	// `2147483647`, producing a confusing "RFC 2147483647 not found"
-	// instead of "invalid RFC number".
-	if n.str() != digits {
-		return ErrInvalidNumber{
-			value: input
-		}
+	// `string.int` clamps on overflow; reject inputs that did not
+	// roundtrip so "2147483648" surfaces as "invalid RFC number"
+	// instead of pointing at the wrong document.
+	if n <= 0 || n.str() != digits {
+		return fail
 	}
 	return n
+}
+
+// is_positive_decimal accepts a non-empty string of ASCII digits with
+// no leading zero. "0" itself is rejected because RFC numbering starts
+// at 1.
+fn is_positive_decimal(s string) bool {
+	if s == '' || s == '0' {
+		return false
+	}
+	if s.len > 1 && s[0] == `0` {
+		return false
+	}
+	for c in s {
+		if c < `0` || c > `9` {
+			return false
+		}
+	}
+	return true
 }
 
 // metadata_url returns the canonical URL of the JSON metadata document for
