@@ -24,23 +24,25 @@ pub:
 	title        string
 	authors      []string
 	formats      []string @[json: 'format']
-	page_count   int      @[json: 'page_count']
+	page_count   ?int     @[json: 'page_count']
 	pub_status   string   @[json: 'pub_status']
 	status       string
 	source       string
-	abstract     string
-	pub_date     string @[json: 'pub_date']
 	keywords     []string
 	obsoletes    []string
 	obsoleted_by []string @[json: 'obsoleted_by']
 	updates      []string
 	updated_by   []string @[json: 'updated_by']
 	see_also     []string @[json: 'see_also']
-	doi          string
-	// errata_url is `null` upstream when the RFC has no errata reported (e.g.
-	// RFC 9767), so it must be optional rather than a plain string.
+	// Fields below carry `null` upstream for the small set of "Not Issued"
+	// RFCs (RFC 7000 and a handful of others) and for any document missing
+	// an errata page (RFC 9767). They must therefore be optional rather
+	// than plain strings to avoid a JSON decode failure.
+	abstract   ?string
+	pub_date   ?string @[json: 'pub_date']
+	doi        ?string
 	errata_url ?string @[json: 'errata_url']
-	draft      string
+	draft      ?string
 }
 
 // number returns the integer document number derived from `doc_id`

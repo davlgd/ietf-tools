@@ -567,12 +567,16 @@ fn cmd_cache_clear(cmd Command) ! {
 fn print_info(r rfclib.Rfc) {
 	println('${r.doc_id} — ${r.title.trim_space()}')
 	println('  Authors:    ${r.authors.join(', ')}')
-	if r.pub_date != '' {
-		println('  Date:       ${r.pub_date}')
+	if pub_date := r.pub_date {
+		if pub_date != '' {
+			println('  Date:       ${pub_date}')
+		}
 	}
 	println('  Status:     ${r.status}')
-	if r.page_count > 0 {
-		println('  Pages:      ${r.page_count}')
+	if page_count := r.page_count {
+		if page_count > 0 {
+			println('  Pages:      ${page_count}')
+		}
 	}
 	if r.formats.len > 0 {
 		println('  Formats:    ${r.formats.join(', ')}')
@@ -595,8 +599,10 @@ fn print_info(r rfclib.Rfc) {
 	if r.see_also.len > 0 {
 		println('  See also:   ${r.see_also.join(', ')}')
 	}
-	if r.doi != '' {
-		println('  DOI:        ${r.doi}')
+	if doi := r.doi {
+		if doi != '' {
+			println('  DOI:        ${doi}')
+		}
 	}
 	if errata := r.errata_url {
 		if errata != '' {
@@ -608,11 +614,13 @@ fn print_info(r rfclib.Rfc) {
 		println('  RFC Editor: ${rfclib.rfc_editor_info_url(number)}')
 		println('  Tracker:    ${rfclib.datatracker_url(number)}')
 	}
-	if r.abstract != '' {
-		println('')
-		println('Abstract:')
-		for line in r.abstract.split_into_lines() {
-			println('  ${line}')
+	if abstract := r.abstract {
+		if abstract != '' {
+			println('')
+			println('Abstract:')
+			for line in abstract.split_into_lines() {
+				println('  ${line}')
+			}
 		}
 	}
 }

@@ -55,7 +55,7 @@ fn resolve_refs(doc_ids []string, cache map[int]Rfc) []XrefEntry {
 					doc_id:   id
 					number:   n
 					title:    r.title.trim_space()
-					pub_date: r.pub_date
+					pub_date: r.pub_date or { '' }
 				}
 			}
 		}

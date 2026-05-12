@@ -89,14 +89,16 @@ fn test_parse_metadata_internet_standard() {
 	assert rfc.number() == 8259
 	assert rfc.title == 'The JavaScript Object Notation (JSON) Data Interchange Format'
 	assert rfc.status == 'INTERNET STANDARD'
-	assert rfc.page_count == 16
+	page_count := rfc.page_count or { 0 }
+	assert page_count == 16
 	assert rfc.formats == ['ASCII', 'HTML']
 	assert rfc.obsoletes == ['RFC7159']
 	assert rfc.obsoleted_by.len == 0
 	assert rfc.see_also == ['STD0090']
 	errata := rfc.errata_url or { '' }
 	assert errata == 'https://www.rfc-editor.org/errata/rfc8259'
-	assert rfc.doi == '10.17487/RFC8259'
+	doi := rfc.doi or { '' }
+	assert doi == '10.17487/RFC8259'
 }
 
 fn test_parse_metadata_with_null_errata_url() {
@@ -109,6 +111,35 @@ fn test_parse_metadata_with_null_errata_url() {
 	assert rfc.status == 'PROPOSED STANDARD'
 	if _ := rfc.errata_url {
 		assert false, 'errata_url should be none for RFC 9767'
+	}
+}
+
+fn test_parse_metadata_not_issued_rfc() {
+	// RFC 7000 is a "Not Issued" placeholder: draft, abstract, pub_date,
+	// doi and page_count are all `null` upstream. Regression: this used
+	// to crash with "Expected string, but got null" because the affected
+	// fields were declared as plain strings.
+	rfc := parse_metadata(fixture('rfc7000.json')) or { panic(err) }
+	assert rfc.number() == 7000
+	assert rfc.title == 'Not Issued'
+	assert rfc.status == 'NOT ISSUED'
+	if _ := rfc.page_count {
+		assert false, 'page_count should be none for "Not Issued" RFC 7000'
+	}
+	if _ := rfc.draft {
+		assert false, 'draft should be none for "Not Issued" RFC 7000'
+	}
+	if _ := rfc.abstract {
+		assert false, 'abstract should be none for "Not Issued" RFC 7000'
+	}
+	if _ := rfc.pub_date {
+		assert false, 'pub_date should be none for "Not Issued" RFC 7000'
+	}
+	if _ := rfc.doi {
+		assert false, 'doi should be none for "Not Issued" RFC 7000'
+	}
+	if _ := rfc.errata_url {
+		assert false, 'errata_url should be none for "Not Issued" RFC 7000'
 	}
 }
 
@@ -125,7 +156,8 @@ fn test_parse_metadata_experimental_with_keywords() {
 	assert rfc.status == 'EXPERIMENTAL'
 	assert rfc.keywords == ['avian', 'carrier', 'april', 'fools']
 	assert rfc.updated_by == ['RFC2549', 'RFC6214']
-	assert rfc.draft == ''
+	draft := rfc.draft or { '' }
+	assert draft == ''
 	assert rfc.authors == ['D. Waitzman']
 }
 
