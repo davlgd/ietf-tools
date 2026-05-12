@@ -428,28 +428,19 @@ struct TrackOutput {
 fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
 	println('${d.name}-${d.rev}')
 	if d.pages > 0 {
-		println('  Pages:      ${d.pages}')
+		print_field('Pages', d.pages.str())
 	}
-	stream := d.stream_slug()
-	if stream != '' {
-		println('  Stream:     ${stream}')
-	}
+	print_field('Stream', d.stream_slug())
 	intended := d.intended_slug()
-	if intended != '' {
-		println('  Intended:   ${intended}')
-	}
+	print_field('Intended', intended)
 	std_lvl := d.std_level_slug()
-	if std_lvl != '' && std_lvl != intended {
-		println('  Status:     ${std_lvl}')
+	if std_lvl != intended {
+		print_field('Status', std_lvl)
 	}
 	if rfc := d.rfc_number {
-		println('  Published:  RFC ${rfc}')
+		print_field('Published', 'RFC ${rfc}')
 	}
-	if expires := d.expires {
-		if expires != '' {
-			println('  Expires:    ${expires}')
-		}
-	}
+	print_field('Expires', d.expires or { '' })
 	if states.len > 0 {
 		println('  States:')
 		for s in states {
