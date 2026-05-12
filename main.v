@@ -297,7 +297,14 @@ fn die_on_err(err IError, not_found_label string) {
 	if err is rfclib.ErrOffline {
 		die('${not_found_label} is not cached (offline mode)')
 	}
-	die(err.msg())
+	// JSON/XML decode errors usually mean a poisoned cache entry. Point
+	// the user at the most direct recovery instead of dumping the raw
+	// parser message that "${not_found_label}" is then meant to explain.
+	msg := err.msg()
+	if msg.contains('Invalid json') || msg.contains('Invalid xml') {
+		die('${not_found_label}: cached payload is corrupt (run with --refresh or `rfc cache clear`)')
+	}
+	die(msg)
 }
 
 // add_output_format_flag attaches the `-f/--format` flag (text|json) used by
