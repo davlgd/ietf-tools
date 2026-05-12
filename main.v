@@ -392,9 +392,9 @@ fn cmd_track(cmd Command) ! {
 			print_track(draft, states)
 		}
 		'json' {
-			println(json2.encode({
-				'draft':  json2.Any(json2.encode(draft))
-				'states': json2.Any(json2.encode(states))
+			println(json2.encode(TrackOutput{
+				draft:  draft
+				states: states
 			},
 				prettify: true
 			))
@@ -403,6 +403,14 @@ fn cmd_track(cmd Command) ! {
 			die('unknown format: ${format} (expected: text, json)')
 		}
 	}
+}
+
+// TrackOutput is the typed JSON shape emitted by `rfc track -f json`.
+// It bundles the draft document with its resolved state list so callers
+// can decode both halves of the report in a single round-trip.
+struct TrackOutput {
+	draft  rfclib.Draft
+	states []rfclib.DraftState
 }
 
 fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
