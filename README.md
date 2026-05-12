@@ -1,34 +1,13 @@
 # ietf-tools
 
-A small, modular suite of CLIs in [V](https://vlang.io) to interact with
-[IETF RFCs](https://www.rfc-editor.org/) and the
-[IETF Datatracker](https://datatracker.ietf.org).
-
-The first tool, `rfc`, lets you fetch, cache and inspect any RFC from the
-command line. Every CLI in the suite is built on a single shared library,
-[`rfclib`](rfclib/), so behaviour around caching, identification, and error
-reporting stays consistent across the suite as it grows.
-
-## Status
-
-- ✅ `rfc <number>` — fetch and print the plain-text RFC
-- ✅ `rfc info <number>` — show metadata (status, authors, dates, obsoletes,
-  errata, DOI…)
-- ✅ `rfc latest` — list the most recently published RFCs (RFC Editor RSS
-  feed); add `-f json` for machine-readable output, `--refresh` to bypass
-  the cache
-- ✅ `rfc search <token>...` — find RFCs whose title contains every token
-  (case-insensitive AND); filter by `-s/--status` (e.g. `ps`,
-  `proposed-standard`), cap with `-n`, switch to `-f json` for piping; uses
-  the IETF Datatracker
-- ✅ `rfc cache path` / `rfc cache clear` — inspect and wipe the on-disk cache
-- ✅ `rfc bortzmeyer <number>` — open Stéphane Bortzmeyer's French-language
-  analysis of the RFC in your default browser, with `--print` to emit the URL
-  instead of launching one
-- ✅ `--offline` — never touch the network, only use the local cache
-- 🔜 `errata`, `xref`, `track <draft>`, `iana <registry>`, `bib`,
-  author/working-group filters in `search` (will require the local
-  `rfc-index.xml` since Datatracker REST does not expose author joins)
+`rfc` is a CLI written in [V](https://vlang.io) bundling several tools
+that interact with [IETF RFCs](https://www.rfc-editor.org/) and the
+[IETF Datatracker](https://datatracker.ietf.org): fetch and cache RFCs,
+resolve cross-references and errata, look up IANA codes, track
+Internet-Drafts, and search the Datatracker — all from the command line.
+Its building blocks live in [`rfclib`](rfclib/), a small shared library
+that keeps caching, HTTP and error reporting consistent across every
+subcommand.
 
 ## Quick start
 
@@ -46,6 +25,19 @@ make build              # produces ./rfc
 # Show metadata (status, dates, obsoletes, errata, RFC Editor + Datatracker links)
 ./rfc info 8259
 
+# Cross-reference graph (each related RFC resolved to its title)
+./rfc xref 8259
+
+# Errata reported against an RFC
+./rfc errata 8259
+
+# IETF Datatracker state of an Internet-Draft
+./rfc track draft-ietf-quic-transport
+
+# Look up a code in any IANA registry XML
+./rfc iana http-status-codes 404
+./rfc iana uri-schemes ssh
+
 # List recently published RFCs from the RSS feed (-f json for piping)
 ./rfc latest
 
@@ -53,7 +45,7 @@ make build              # produces ./rfc
 ./rfc search tls 1.3
 ./rfc search -s ps tls 1.3
 
-# Open Bortzmeyer's analysis in your browser when one exists
+# Open Stéphane Bortzmeyer's analysis in your browser when one exists
 ./rfc bortzmeyer 8259
 
 # Inspect or wipe the local cache
@@ -70,41 +62,31 @@ rejected explicitly.
 
 ## Architecture
 
-```
-ietf-tools/
-├── main.v               # `rfc` CLI (the only binary, for now)
-├── rfclib/              # Shared library; one cache + one HTTP client across the suite
-│   ├── cache.v          # Content-addressed on-disk cache (sha256(url) → file)
-│   ├── http.v           # net.http wrapper: User-Agent, timeouts, cache integration
-│   ├── rfc.v            # Rfc struct, parse_rfc_number, format/URL helpers
-│   ├── feed.v           # RSS 2.0 parser for the RFC Editor "recent RFCs" feed
-│   ├── datatracker.v    # IETF Datatracker search query + JSON response decoder
-│   ├── bortzmeyer.v     # Bortzmeyer URL builder + HEAD-based existence probe
-│   ├── errors.v         # Typed errors (ErrInvalidNumber, ErrNotFound, ErrUpstream)
-│   ├── *_test.v         # Unit tests
-│   └── testdata/        # Real fixtures captured from upstream
-├── Makefile             # build, dev, test, fmt, vet, clean
-└── v.mod
-```
-
-The shared `rfclib` is the load-bearing module: every new subcommand or
-sibling CLI (e.g. a future `rfc-track` for Datatracker state) plugs into the
-same `Client`, the same `Cache`, the same error types. That keeps the user's
-mental model (`--offline`, `--cache-dir`, `~/.cache/ietf-tools`) identical
-across the suite.
+The shared `rfclib` is the load-bearing module: every subcommand and
+every future sibling CLI plugs into the same `Client`, the same
+`Cache`, the same `FetchOpts`/typed errors. That keeps the user's
+mental model (`--offline`, `--cache-dir`, `--refresh`,
+`~/.cache/ietf-tools`) identical across the suite.
 
 ## Cache
 
-By default the cache lives under V's `os.cache_dir()`:
+By default the cache lives under V's `os.cache_dir()`, which honours
+`$XDG_CACHE_HOME` everywhere (V's stdlib applies the XDG convention
+uniformly, including on macOS and Windows):
 
-| OS              | Path                                       |
-| --------------- | ------------------------------------------ |
-| Linux           | `$XDG_CACHE_HOME/ietf-tools` (or `~/.cache/ietf-tools`) |
-| macOS           | `~/.cache/ietf-tools`                      |
-| Windows         | `%LocalAppData%\ietf-tools`                |
+| Platform          | Path                                                        |
+| ----------------- | ----------------------------------------------------------- |
+| `$XDG_CACHE_HOME` | `$XDG_CACHE_HOME/ietf-tools`                                |
+| Linux / macOS     | `~/.cache/ietf-tools` when `$XDG_CACHE_HOME` is unset       |
+| Windows           | `%USERPROFILE%\.cache\ietf-tools` when `%XDG_CACHE_HOME%` is unset |
 
-Override with `--cache-dir <path>` on any subcommand, or wipe with
-`rfc cache clear`.
+Show or override the path:
+
+```sh
+rfc cache path                       # print the active cache directory
+rfc --cache-dir /tmp/rfc info 8259   # override per invocation
+rfc cache clear                      # wipe every entry
+```
 
 Cache writes are atomic (temp file + rename), so an interrupted download
 never leaves a corrupt entry under the canonical key.
@@ -112,13 +94,18 @@ never leaves a corrupt entry under the canonical key.
 ## Development
 
 ```sh
-make test               # run all rfclib tests
+make test               # run every *_test.v under rfclib/ and at the root
 make fmt                # apply v fmt -w
 make vet                # v vet
 make build              # produce ./rfc (production build via clang -O)
 make dev                # quick non-optimised build via tcc (faster compile)
+make install            # install ./rfc to $(PREFIX)/bin (default /usr/local)
+make uninstall          # remove the installed rfc binary
 make clean
 ```
+
+`PREFIX` and `DESTDIR` are honoured by `install`/`uninstall`, so
+distribution packagers can do `make install DESTDIR=$pkgdir PREFIX=/usr`.
 
 `make build` uses `v -prod` so that the resulting binary is the optimised
 clang build, which is what you want for daily use. `make dev` is the tcc
@@ -126,36 +113,32 @@ fast-compile path, useful while iterating on code; HTTPS may behave
 differently between the two back ends, so reach for `make build` whenever
 you exercise network paths.
 
-Tests use real RFC payloads captured from `rfc-editor.org` as fixtures
-(`rfclib/testdata/rfc8259.json`, `rfc7159.json`, `rfc1149.json`). HTTP tests
-never hit the network: they pre-populate the cache and verify the client
-serves from disk.
+Tests use real upstream payloads as fixtures (`rfclib/testdata/`). HTTP
+tests never hit the network: they pre-populate the cache and verify the
+client serves from disk.
+
+CI runs `v fmt -verify`, `v vet`, `v test` and `v -prod` on every push and
+pull request, across Linux x86_64, Linux ARM64 and macOS ARM64. See
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ## Data sources
 
 `rfc` currently talks to:
 
-- `https://www.rfc-editor.org/rfc/rfcNNNN.{json,txt,html,pdf,xml}` — per-RFC
-  metadata and renderings (the latter two only for xml2rfc-v3 era documents).
+- `https://www.rfc-editor.org/rfc/rfcNNNN.{json,txt,html,pdf,xml}` —
+  per-RFC metadata and renderings (PDF/XML only for xml2rfc-v3 era
+  documents).
 - `https://www.rfc-editor.org/rfcrss.xml` — RSS 2.0 feed of recent RFCs.
-- `https://datatracker.ietf.org/api/v1/doc/document/` — Datatracker search
-  endpoint used by `rfc search`.
-- `https://www.bortzmeyer.org/<number>.html` — Bortzmeyer's per-RFC analysis,
-  reached via a HEAD probe + browser launch.
-
-Future subcommands will add per-RFC errata
-(`https://www.rfc-editor.org/errata/rfcNNNN.json`), IANA registries
-(`https://www.iana.org/protocols`), and richer Datatracker views (drafts,
-ballots, working-group state).
-
-## Acknowledgements
-
-The schema of the metadata struct mirrors the per-RFC JSON published by the
-RFC Editor; the test vectors are real payloads, kept untouched. The Python
-[`ietfdata`](https://github.com/glasgow-ipl/ietfdata) library was a useful
-reference for modelling the upstream data without having to copy any of its
-code.
+- `https://www.rfc-editor.org/errata.json` — global errata catalogue,
+  filtered locally by RFC number.
+- `https://datatracker.ietf.org/api/v1/doc/document/` — Datatracker
+  search endpoint plus per-draft state.
+- `https://datatracker.ietf.org/api/v1/doc/state/` — Datatracker state
+  catalogue, joined locally against each draft's state URIs.
+- `https://www.iana.org/assignments/<reg>/<reg>.xml` — IANA registries.
+- `https://www.bortzmeyer.org/<number>.html` — Bortzmeyer's per-RFC
+  analysis, reached via a HEAD probe + browser launch.
 
 ## License
 
-Apache-2.0 — see [`LICENSE`](LICENSE).
+Apache-2.0 — see [`LICENSE`](LICENSE)

@@ -20,13 +20,13 @@ fn main() {
 	root.add_flag(Flag{
 		flag:        .bool
 		name:        'offline'
-		description: 'Only use the local cache; do not perform network requests'
+		description: 'Serve from the local cache; never hit the network'
 		global:      true
 	})
 	root.add_flag(Flag{
 		flag:          .string
 		name:          'cache-dir'
-		description:   'Override the cache directory (default: OS user-cache + ietf-tools)'
+		description:   'Cache directory (default: <os.cache_dir>/ietf-tools)'
 		global:        true
 		default_value: ['']
 	})
@@ -34,13 +34,13 @@ fn main() {
 		flag:          .string
 		name:          'format'
 		abbrev:        'f'
-		description:   'RFC rendering to fetch: text (default), html, pdf, xml'
+		description:   'Document rendering: text (default), html, pdf, xml'
 		default_value: ['text']
 	})
 
 	mut info_cmd := Command{
 		name:          'info'
-		description:   'Show metadata for an RFC: status, dates, obsoletes, errata'
+		description:   'Show metadata for an RFC (status, dates, obsoletes)'
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_info
@@ -49,13 +49,13 @@ fn main() {
 	info_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
-		description: 'Bypass the cache and re-fetch the metadata from rfc-editor.org'
+		description: 'Bypass the cache and re-fetch the metadata'
 	})
 	root.add_command(info_cmd)
 
 	mut search_cmd := Command{
 		name:          'search'
-		description:   'Search RFCs by title token(s) and optional status (IETF Datatracker)'
+		description:   'Search RFCs by title token(s) on the IETF Datatracker'
 		usage:         '<token>...'
 		required_args: 1
 		execute:       cmd_search
@@ -64,7 +64,7 @@ fn main() {
 		flag:          .string
 		name:          'status'
 		abbrev:        's'
-		description:   'Filter by std_level slug (ps, std, bcp, inf, exp, hist, ds, unkn)'
+		description:   'Filter by std_level: ps, std, bcp, inf, exp, hist, ds'
 		default_value: ['']
 	})
 	search_cmd.add_flag(Flag{
@@ -84,7 +84,7 @@ fn main() {
 
 	mut track_cmd := Command{
 		name:          'track'
-		description:   'Show the IETF Datatracker state of an Internet-Draft'
+		description:   'Show the Datatracker state of an Internet-Draft'
 		usage:         '<draft-name>'
 		required_args: 1
 		execute:       cmd_track
@@ -99,7 +99,7 @@ fn main() {
 
 	mut xref_cmd := Command{
 		name:          'xref'
-		description:   'Show the cross-reference graph of an RFC: obsoletes, updates, see also'
+		description:   'Cross-reference graph: obsoletes, updates, see also'
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_xref
@@ -108,13 +108,13 @@ fn main() {
 	xref_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
-		description: 'Bypass the cache and re-fetch every referenced metadata document'
+		description: 'Bypass the cache and re-fetch every referenced RFC'
 	})
 	root.add_command(xref_cmd)
 
 	mut errata_cmd := Command{
 		name:          'errata'
-		description:   'List errata reported for an RFC (RFC Editor catalogue)'
+		description:   'List errata reported for an RFC'
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_errata
@@ -123,13 +123,13 @@ fn main() {
 	errata_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
-		description: 'Bypass the cache and redownload the errata catalogue'
+		description: 'Bypass the cache and redownload the catalogue'
 	})
 	root.add_command(errata_cmd)
 
 	mut iana_cmd := Command{
 		name:          'iana'
-		description:   'Look up a code in an IANA registry (e.g. iana http-status-codes 404)'
+		description:   'Look up a code in an IANA registry'
 		usage:         '<registry> <code>'
 		required_args: 2
 		execute:       cmd_iana
@@ -144,20 +144,20 @@ fn main() {
 
 	mut latest_cmd := Command{
 		name:        'latest'
-		description: 'List the most recently published RFCs (RFC Editor RSS feed)'
+		description: 'List the most recent RFCs (RFC Editor RSS feed)'
 		execute:     cmd_latest
 	}
 	add_output_format_flag(mut latest_cmd)
 	latest_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'refresh'
-		description: 'Bypass the cache and fetch the feed directly from rfc-editor.org'
+		description: 'Bypass the cache and re-fetch the feed'
 	})
 	root.add_command(latest_cmd)
 
 	mut bortzmeyer_cmd := Command{
 		name:          'bortzmeyer'
-		description:   "Open Stéphane Bortzmeyer's analysis for an RFC in your browser"
+		description:   "Open Stéphane Bortzmeyer's analysis in your browser"
 		usage:         '<rfc-number>'
 		required_args: 1
 		execute:       cmd_bortzmeyer
@@ -165,7 +165,7 @@ fn main() {
 	bortzmeyer_cmd.add_flag(Flag{
 		flag:        .bool
 		name:        'print'
-		description: 'Only print the URL on stdout; do not launch a browser'
+		description: 'Print the URL on stdout; do not launch a browser'
 	})
 	root.add_command(bortzmeyer_cmd)
 
