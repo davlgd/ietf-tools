@@ -46,6 +46,11 @@ fn main() {
 		execute:       cmd_info
 	}
 	add_output_format_flag(mut info_cmd)
+	info_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and re-fetch the metadata from rfc-editor.org'
+	})
 	root.add_command(info_cmd)
 
 	mut search_cmd := Command{
@@ -100,6 +105,11 @@ fn main() {
 		execute:       cmd_xref
 	}
 	add_output_format_flag(mut xref_cmd)
+	xref_cmd.add_flag(Flag{
+		flag:        .bool
+		name:        'refresh'
+		description: 'Bypass the cache and re-fetch every referenced metadata document'
+	})
 	root.add_command(xref_cmd)
 
 	mut errata_cmd := Command{
@@ -297,8 +307,9 @@ fn cmd_get(cmd Command) ! {
 fn cmd_info(cmd Command) ! {
 	number := rfclib.parse_rfc_number(cmd.args[0])!
 	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
 	client := make_client(cmd)!
-	rfc := client.fetch_metadata(number)!
+	rfc := if refresh { client.refresh_metadata(number)! } else { client.fetch_metadata(number)! }
 	match format.to_lower().trim_space() {
 		'text' { print_info(rfc) }
 		'json' { println(json2.encode(rfc, prettify: true)) }
@@ -399,8 +410,9 @@ fn print_track(d rfclib.Draft, states []rfclib.DraftState) {
 fn cmd_xref(cmd Command) ! {
 	number := rfclib.parse_rfc_number(cmd.args[0])!
 	format := cmd.flags.get_string('format') or { 'text' }
+	refresh := cmd.flags.get_bool('refresh') or { false }
 	client := make_client(cmd)!
-	xr := client.fetch_xref(number)!
+	xr := if refresh { client.refresh_xref(number)! } else { client.fetch_xref(number)! }
 
 	match format.to_lower().trim_space() {
 		'text' { print_xref(xr) }

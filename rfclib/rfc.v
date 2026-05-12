@@ -168,3 +168,9 @@ pub fn (c Client) fetch_metadata(number int) !Rfc {
 	body := c.fetch(metadata_url(number))!
 	return parse_metadata(body)!
 }
+
+// refresh_metadata is `fetch_metadata` with the cache bypassed.
+pub fn (c Client) refresh_metadata(number int) !Rfc {
+	body := c.fetch_fresh(metadata_url(number))!
+	return parse_metadata(body)!
+}
