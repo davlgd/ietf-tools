@@ -1,6 +1,7 @@
 # Build outputs
 /rfc
 /rfc.exe
+/bin/
 *.exe
 *.o
 *.tmp.c
