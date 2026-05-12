@@ -177,7 +177,70 @@ fn main() {
 	root.add_command(cache_cmd)
 
 	root.setup()
-	root.parse(os.args)
+	root.parse(reorder_args(os.args))
+}
+
+// reorder_args rewrites argv so every flag token appears before any
+// positional. V's `cli` module structurally stops parsing flags at the
+// first non-flag arg, which means `rfc info 8259 -f json` silently drops
+// `-f json` and falls back to the default format. Users do not expect
+// that, and the silent failure mode is the worst kind (e.g. `rfc 8259
+// -f pdf > out.pdf` would otherwise yield a text file masquerading as a
+// PDF). Reordering preserves the user's intent regardless of where they
+// place flags on the line.
+//
+// The function is intentionally schema-aware: only the small set of
+// flags rfc exposes that *take a value* are known, so a boolean flag
+// followed by a positional is not mistakenly consumed. Combined forms
+// like `-fjson` and `--format=json` are passed through unchanged.
+fn reorder_args(args []string) []string {
+	if args.len <= 1 {
+		return args
+	}
+	value_flags := ['-f', '--format', '--cache-dir', '-s', '--status', '-n', '--limit']
+	subcommands := ['info', 'search', 'track', 'xref', 'errata', 'iana', 'latest', 'bortzmeyer',
+		'cache', 'help', 'version', 'man']
+	cache_subs := ['path', 'clear']
+
+	mut prefix := [args[0]]
+	mut start := 1
+	if start < args.len && args[start] in subcommands {
+		prefix << args[start]
+		// Capture `cache <path|clear>` as part of the prefix so the
+		// sub-subcommand stays anchored before any reordered flags.
+		if args[start] == 'cache' && start + 1 < args.len && args[start + 1] in cache_subs {
+			prefix << args[start + 1]
+			start += 2
+		} else {
+			start += 1
+		}
+	}
+
+	mut flags := []string{}
+	mut positionals := []string{}
+	mut i := start
+	for i < args.len {
+		t := args[i]
+		if t.starts_with('-') && t != '-' {
+			flags << t
+			// A separate value token follows only for the known value-taking
+			// flags and only when the next token is not itself a flag.
+			if t in value_flags && i + 1 < args.len && !args[i + 1].starts_with('-') {
+				flags << args[i + 1]
+				i += 2
+			} else {
+				i += 1
+			}
+		} else {
+			positionals << t
+			i += 1
+		}
+	}
+
+	mut out := prefix.clone()
+	out << flags
+	out << positionals
+	return out
 }
 
 // add_output_format_flag attaches the `-f/--format` flag (text|json) used by
