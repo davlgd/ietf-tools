@@ -32,9 +32,16 @@ pub fn new_cache() !Cache {
 }
 
 // new_cache_at returns a Cache rooted at an explicit directory. Useful for
-// tests and for users who want to override the default location.
+// tests and for users who want to override the default location. The
+// directory is created on first call. Pointing at an existing
+// non-directory path is refused upfront with a clear error rather than
+// surfacing a confusing "failed to open <hash>.tmp" later.
 pub fn new_cache_at(root string) !Cache {
-	if !os.exists(root) {
+	if os.exists(root) {
+		if !os.is_dir(root) {
+			return error('cache path ${root} exists but is not a directory')
+		}
+	} else {
 		os.mkdir_all(root)!
 	}
 	return Cache{
