@@ -401,7 +401,7 @@ fn cmd_track(cmd Command) ! {
 	} else {
 		client.fetch_draft(name) or { die_on_err(err, 'draft ${name}') }
 	}
-	state_index := client.fetch_states_index() or { die(err.msg()) }
+	state_index := client.fetch_states_index() or { die_on_err(err, 'Datatracker state catalogue') }
 	states := rfclib.resolve_states(draft, state_index)
 
 	match format.to_lower().trim_space() {
@@ -569,9 +569,9 @@ fn cmd_search(cmd Command) ! {
 	}
 	client := make_client(cmd) or { die(err.msg()) }
 	hits := if refresh {
-		client.search_fresh(query) or { die(err.msg()) }
+		client.search_fresh(query) or { die_on_err(err, 'Datatracker search') }
 	} else {
-		client.search(query) or { die(err.msg()) }
+		client.search(query) or { die_on_err(err, 'Datatracker search') }
 	}
 
 	match format.to_lower().trim_space() {
@@ -649,9 +649,9 @@ fn cmd_latest(cmd Command) ! {
 	client := make_client(cmd) or { die(err.msg()) }
 
 	entries := if refresh {
-		client.refresh_latest() or { die(err.msg()) }
+		client.refresh_latest() or { die_on_err(err, 'RFC Editor feed') }
 	} else {
-		client.fetch_latest() or { die(err.msg()) }
+		client.fetch_latest() or { die_on_err(err, 'RFC Editor feed') }
 	}
 
 	match format.to_lower().trim_space() {
