@@ -207,52 +207,19 @@ fn reorder_args(args []string) []string {
 	if args.len <= 1 {
 		return args
 	}
-	value_flags := ['-f', '--format', '--cache-dir', '-s', '--status', '-n', '--limit']
-	subcommands := ['info', 'search', 'track', 'xref', 'errata', 'iana', 'latest', 'bortzmeyer',
-		'cache', 'help', 'version', 'man']
-	cache_subs := ['path', 'clear']
 
-	// Pass 1: gobble any leading flags (those placed before the subcommand
-	// name, like `rfc --offline bortzmeyer 8259`). They must be moved past
-	// the subcommand-name token so the cli module's per-command parse_flags
-	// sees them. Without this step, a global flag emitted before the
-	// subcommand could shadow a homonymous subcommand flag.
-	mut leading_flags := []string{}
-	mut i := 1
-	for i < args.len && args[i].starts_with('-') && args[i] != '-' {
-		t := args[i]
-		leading_flags << t
-		if t in value_flags && i + 1 < args.len && !args[i + 1].starts_with('-') {
-			leading_flags << args[i + 1]
-			i += 2
-		} else {
-			i += 1
-		}
-	}
-
-	mut prefix := [args[0]]
-	if i < args.len && args[i] in subcommands {
-		prefix << args[i]
-		// `cache <path|clear>` is a sub-subcommand that stays anchored
-		// inside the prefix so reordered flags do not slip between the
-		// two tokens.
-		if args[i] == 'cache' && i + 1 < args.len && args[i + 1] in cache_subs {
-			prefix << args[i + 1]
-			i += 2
-		} else {
-			i += 1
-		}
-	}
-
-	mut flags := leading_flags.clone()
+	// Single pass: split every token after argv[0] into the flag block
+	// (with their values) and the positional block. Combined forms like
+	// `-fjson` and `--format=json` are self-contained so they pass through
+	// without consuming a follow-up token.
+	mut flags := []string{}
 	mut positionals := []string{}
+	mut i := 1
 	for i < args.len {
 		t := args[i]
 		if t.starts_with('-') && t != '-' {
 			flags << t
-			// A separate value token follows only for the known value-taking
-			// flags and only when the next token is not itself a flag.
-			if t in value_flags && i + 1 < args.len && !args[i + 1].starts_with('-') {
+			if t in reorder_value_flags && i + 1 < args.len && !args[i + 1].starts_with('-') {
 				flags << args[i + 1]
 				i += 2
 			} else {
@@ -264,11 +231,32 @@ fn reorder_args(args []string) []string {
 		}
 	}
 
+	// The subcommand (if any) is the first positional and must stay
+	// directly after argv[0]; `cache <path|clear>` adds one more anchored
+	// token because the sub-subcommand pair must not be interrupted by
+	// reordered flags.
+	mut prefix := [args[0]]
+	mut tail := positionals.clone()
+	if tail.len > 0 && tail[0] in reorder_subcommands {
+		prefix << tail[0]
+		if tail[0] == 'cache' && tail.len > 1 && tail[1] in reorder_cache_subs {
+			prefix << tail[1]
+			tail = tail[2..].clone()
+		} else {
+			tail = tail[1..].clone()
+		}
+	}
+
 	mut out := prefix.clone()
 	out << flags
-	out << positionals
+	out << tail
 	return out
 }
+
+const reorder_value_flags = ['-f', '--format', '--cache-dir', '-s', '--status', '-n', '--limit']
+const reorder_subcommands = ['info', 'search', 'track', 'xref', 'errata', 'iana', 'latest',
+	'bortzmeyer', 'cache', 'help', 'version', 'man']
+const reorder_cache_subs = ['path', 'clear']
 
 // die prints a friendly, prefixed error message on stderr and exits the
 // process with status 1. It is the single channel for user-visible errors:
