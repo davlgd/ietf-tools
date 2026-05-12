@@ -8,5 +8,11 @@ runs:
       shell: bash
       run: |
         git clone --depth 1 https://github.com/vlang/v
-        cd v && make
-        echo "${PWD}" >> ${GITHUB_PATH}
+        cd v
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          ./makev.bat
+          pwd -W >> "$GITHUB_PATH"
+        else
+          make
+          echo "$PWD" >> "$GITHUB_PATH"
+        fi
